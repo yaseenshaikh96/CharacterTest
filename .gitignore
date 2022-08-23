@@ -1,0 +1,21 @@
+*.csproj
+
+.vscode/
+
+Assets/Models/
+
+Assets/TextMesh\ Pro/
+
+Library/
+
+Logs/
+
+obj/
+
+Packages/
+
+ProjectSettings/
+
+Temp/
+
+UserSettings/
