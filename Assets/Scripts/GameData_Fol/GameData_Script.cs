@@ -20,7 +20,7 @@ public class GameData_Script : MonoBehaviour
         instance = this;
         currentScene = SceneNameEnum.GameData_Scene;
         currentSceneNotThreadSafe = SceneNameEnum.GameData_Scene;
-        ChangeScene(SceneNameEnum.MainMenu_Scene);
+        // ChangeScene(SceneNameEnum.MainMenu_Scene);
     }
 
     //------------------------------------------//
