@@ -7,10 +7,6 @@ public class Game_01_Script : MonoBehaviour
 {
     GameData_Script gameData;
     //------------------------------------------//
-    [SerializeField] private GameObject level_01Prefab;
-    [SerializeField] private GameObject playerPrefab;
-    private GameObject playerGO;
-    private GameObject level_01;
 
     //--------------------------------------//
 
@@ -19,9 +15,10 @@ public class Game_01_Script : MonoBehaviour
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.Game_01_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        Instantiate(level_01Prefab, Vector3.zero, Quaternion.identity);
-        Instantiate(playerPrefab, Vector3.up, Quaternion.identity);
 
+        GameObject.FindObjectOfType<LevelManager_Script>().enabled = true;
+        GameObject.FindObjectOfType<PlayerManager_Script>().enabled = true;
+        GameObject.FindObjectOfType<CameraManager_Script>().enabled = true;
     }
 
     void Update()
