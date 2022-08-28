@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Test_Mat
+  m_Name: Cube_Mat
   m_Shader: {fileID: 4800000, guid: 8e67c12a58db88d46a5d5c21b353c31b, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -58,13 +58,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AmbientLight: 0.15
+    - _AmbientLight: 0.1
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _Fernel: 0.5
-    - _Gloss: 0.468
+    - _Fernel: 0.4
+    - _Gloss: 0.05
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -78,7 +78,6 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _AmbientColor: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 0.10156862, g: 0.1262746, b: 0.7, a: 1}
+    - _Color: {r: 0.07355818, g: 0.19983932, b: 0.8207547, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

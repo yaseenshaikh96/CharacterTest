@@ -49,14 +49,21 @@ fixed4 frag (v2f i) : SV_Target
     fixed diffuse = saturate(dot(N, L)) * attenuation;
     fixed specular = saturate(dot(H, N)) * (diffuse > 0);
     specular = pow(specular, glossExp) * (_Gloss * 2);
+
+    #ifdef BASE_PASS
     fixed fernel = 1 - saturate(dot(N, V));
     fernel = pow(fernel, _Fernel * 10);
     fernel = fernel * 0.4f; // add fernel and ambient in base pass only
+    #endif
     
     output = _Color;
     output = output * diffuse;
     output = output + (specular * attenuation);
+
+    #ifdef BASE_PASS
     output = output + (_AmbientLight * _Color * attenuation);
     output = output + fernel;
+    #endif
+
     return saturate(output);
 }

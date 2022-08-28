@@ -33,6 +33,7 @@ public class MainMenu_HandleUI : MonoBehaviour
             menuOptionsList_But[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -i * menuHeight * 0.2f);
         menuOptionsList_But[0].onClick.AddListener(OnStartGameButtonPressed);
         menuOptionsList_But[1].onClick.AddListener(OnShaderButtonPressed);
+        menuOptionsList_But[2].onClick.AddListener(OnPathfindingButtonPressed);
         
     }
 
@@ -46,6 +47,11 @@ public class MainMenu_HandleUI : MonoBehaviour
     public void OnShaderButtonPressed() {
     if(!gameData.IsChangingScene)
         gameData.ChangeScene(SceneNameEnum.ShaderTest_Scene);
+    }
+
+    public void OnPathfindingButtonPressed() {
+    if(!gameData.IsChangingScene)
+        gameData.ChangeScene(SceneNameEnum.Pathfinding_Scene);
     }
 
 }

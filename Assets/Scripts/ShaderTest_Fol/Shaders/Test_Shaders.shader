@@ -22,6 +22,8 @@ Shader "Unlit/Test_Shaders"
             #pragma fragment frag
             #pragma multi_compile_fog
 
+            #define BASE_PASS
+
             #include "MyShader.cginc"
             ENDCG
         }
