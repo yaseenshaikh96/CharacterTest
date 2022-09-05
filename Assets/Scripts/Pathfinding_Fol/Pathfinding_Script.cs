@@ -15,7 +15,7 @@ public class Pathfinding_Script : MonoBehaviour
         gameData = GameData_Script.instance;
 
         cameraMain.orthographic = true;
-        cameraMain.orthographicSize = 10;
+        cameraMain.orthographicSize = 6.5f;
         GetComponent<CreateGrid>().enabled = true;
     }
 

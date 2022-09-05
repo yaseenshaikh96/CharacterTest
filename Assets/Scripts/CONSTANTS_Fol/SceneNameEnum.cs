@@ -6,5 +6,6 @@ public enum SceneNameEnum
 {
     GameData_Scene, MainMenu_Scene, Game_01_Scene,
     TestScene1, TestScene2,
-    ShaderTest_Scene, Pathfinding_Scene
+    ShaderTest_Scene, Pathfinding_Scene,
+    EnemySpawner_Scene, PlayerTest_Scene
 }
