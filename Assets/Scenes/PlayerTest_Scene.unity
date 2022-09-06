@@ -399,6 +399,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputManager_Script: {fileID: 1580153740}
+  player_Script: {fileID: 2096088162}
 --- !u!1 &1509430396
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,6 +496,7 @@ GameObject:
   - component: {fileID: 1580153740}
   - component: {fileID: 1580153742}
   - component: {fileID: 1580153741}
+  - component: {fileID: 1580153743}
   m_Layer: 0
   m_Name: InputManagerGO
   m_TagString: Untagged
@@ -531,6 +533,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   wASDInput: {fileID: 1580153742}
   arrowInput: {fileID: 1580153741}
+  playerInput: {fileID: 1580153743}
 --- !u!114 &1580153741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -555,6 +558,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 003926064cf5bc94aa1e77cc52f157af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1580153743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580153738}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 220937f9dc15ee54fbf5270197dc9278, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  keySetting: {fileID: 11400000, guid: 724a31693d358ec4bab06c1bac66f244, type: 2}
+  xAxis: 0
+  yAxis: 0
+  jump: 0
+  running: 0
 --- !u!1 &2096088158
 GameObject:
   m_ObjectHideFlags: 0
@@ -564,6 +584,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2096088159}
+  - component: {fileID: 2096088162}
   - component: {fileID: 2096088160}
   - component: {fileID: 2096088161}
   m_Layer: 0
@@ -597,13 +618,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2096088158}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e1a64b83e0b7ac4e8180d0081d28a1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   myCollider: {fileID: 354354080}
   myRenderer: {fileID: 447510973}
+  player: {fileID: 2096088158}
+  playerInput: {fileID: 1580153743}
 --- !u!114 &2096088161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -611,10 +634,24 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2096088158}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3bf3a91a7d56a1d4ebb549f10fb64739, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   myAnimator: {fileID: 447510974}
   playerController: {fileID: 2096088160}
+--- !u!114 &2096088162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2096088158}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38767b828d2d7684aa069a2323db8c0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerController: {fileID: 2096088160}
+  playerAnimator: {fileID: 2096088161}

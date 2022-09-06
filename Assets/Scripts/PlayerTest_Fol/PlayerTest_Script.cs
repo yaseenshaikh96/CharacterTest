@@ -8,6 +8,7 @@ public class PlayerTest_Script : MonoBehaviour
     
     GameData_Script gameData;
     [SerializeField] private InputManager_Script inputManager_Script;
+    [SerializeField] private Player_Script player_Script;
     //--------------------------//
 
     void Start()
@@ -16,6 +17,7 @@ public class PlayerTest_Script : MonoBehaviour
         gameData = GameData_Script.instance;
 
         inputManager_Script.enabled = true;
+        player_Script.enabled = true;
     }
 
 }

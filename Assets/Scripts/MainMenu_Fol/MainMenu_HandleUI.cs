@@ -34,6 +34,7 @@ public class MainMenu_HandleUI : MonoBehaviour
         menuOptionsList_But[0].onClick.AddListener(OnStartGameButtonPressed);
         menuOptionsList_But[1].onClick.AddListener(OnShaderButtonPressed);
         menuOptionsList_But[2].onClick.AddListener(OnPathfindingButtonPressed);
+        menuOptionsList_But[3].onClick.AddListener(OnPlayerTestButtonPressed);
         
     }
 
@@ -52,6 +53,10 @@ public class MainMenu_HandleUI : MonoBehaviour
     public void OnPathfindingButtonPressed() {
     if(!gameData.IsChangingScene)
         gameData.ChangeScene(SceneNameEnum.Pathfinding_Scene);
+    }
+    public void OnPlayerTestButtonPressed() {
+    if(!gameData.IsChangingScene)
+        gameData.ChangeScene(SceneNameEnum.PlayerTest_Scene);
     }
 
 }

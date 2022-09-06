@@ -17,8 +17,6 @@ public class Game_01_Script : MonoBehaviour
 
 
         GameObject.FindObjectOfType<LevelManager_Script>().enabled = true;
-        GameObject.FindObjectOfType<PlayerManager_Script>().enabled = true;
-        GameObject.FindObjectOfType<CameraManager_Script>().enabled = true;
     }
 
     void Update()
