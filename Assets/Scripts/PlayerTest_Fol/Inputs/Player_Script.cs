@@ -10,7 +10,7 @@ public class Player_Script : MonoBehaviour
     void Start()
     {
         playerController.enabled = true;
-        playerAnimator.enabled = true;
+        // playerAnimator.enabled = true;
     }
 
     // Update is called once per frame
