@@ -27,14 +27,40 @@ public class PlayerController : MonoBehaviour
 
         currentPlayerStateE = PlayerStateE.idle;
         playerStates = new PlayerState[10];
-        playerStates[0] = new PSIdle(); 
-        playerStates[1] = new PSWalking(); 
-        playerStates[2] = new PSRunning(); 
-        playerStates[3] = new PSJumpStart(); 
+        playerStates[0] = new PSIdle();
+        playerStates[1] = new PSWalking();
+        playerStates[2] = new PSRunning();
+        playerStates[3] = new PSJumpStart();
         playerStates[4] = new PSJumping();
         playerStates[4] = new PSJumpEnd();
         playerStates[4] = new PSDash();
         currentPlayerState = playerStates[0];
+    }
+
+    void OnDrawGizmos()
+    {
+        float speed = 0.05f;
+        float hori = Input.GetAxisRaw("Horizontal");
+        float velo = Input.GetAxisRaw("Vertical");
+        Vector3 oldPos = player.transform.position;
+        Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
+        Vector3 origin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+
+        RaycastHit raycastHitInfo;
+        if (Physics.Raycast(origin, Vector3.down, out raycastHitInfo, 5f, groundLayer))
+        {
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(origin, raycastHitInfo.point);
+            Vector3 normal = raycastHitInfo.normal;
+            Vector3 reflected = Vector3.Reflect(Vector3.down, normal);
+
+            RaycastHit raycastHitInfo2;
+            Physics.Raycast(raycastHitInfo.point, reflected, out raycastHitInfo2, 5, groundLayer);
+            Vector3 otherPoint = raycastHitInfo.point + reflected;
+
+            Gizmos.color = Color.black;
+            Gizmos.DrawLine(raycastHitInfo.point, otherPoint);
+        }
     }
 
 
@@ -44,9 +70,13 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
-        if(GroundCheck()) {
+        if (GroundCheck())
+        {
+            Debug.Log("Grounded");
             Move();
-        }else {
+        }
+        else
+        {
             ApplyGravity();
         }
 
@@ -61,24 +91,153 @@ public class PlayerController : MonoBehaviour
     void Move()
     {
         float speed = 0.05f;
-        float stepHeight = 0.04f;
+        float stepAngle = 45f; //deg
+        float stepHeight = 0.05f;
         float hori = Input.GetAxisRaw("Horizontal");
         float velo = Input.GetAxisRaw("Vertical");
-        Vector3 oldPos = player.transform.position;
-        Vector3 newPos = new Vector3( oldPos.x + (hori * speed), oldPos.y,oldPos.z + ( velo * speed));
-        Vector3 origin =  new Vector3(newPos.x, newPos.y + 2, newPos.z);
 
-        RaycastHit raycastHitInfo;
-        if(Physics.Raycast(origin, Vector3.down, out raycastHitInfo, 5f, groundLayer)){
-            Debug.Log("Ray.y: " + raycastHitInfo.point.y + " pos.y: " + newPos.y + " = " + (raycastHitInfo.point.y - newPos.y));
-            if((raycastHitInfo.point.y - newPos.y) < stepHeight) {
-                player.transform.position = new Vector3( newPos.x, raycastHitInfo.point.y, newPos.z);
+        Vector3 moveDir = (new Vector3(hori, 0, velo)).normalized;
+
+        Vector3[] rayOrigins = new Vector3[5];
+        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0, 2, 0)); // center
+        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0.5f, 2, 0.5f)); // top right
+        rayOrigins[0] = player.transform.TransformPoint(new Vector3(-0.5f, 2, 0.5f)); // top left
+        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0.5f, 2, -0.5f)); // bot right
+        rayOrigins[0] = player.transform.TransformPoint(new Vector3(-0.5f, 2, -0.5f)); // bot left
+
+        //slop
+
+        for (int i = 1; i < 5; i++)
+        {
+            Vector3 oldRayOrigin = rayOrigins[i];
+            Vector3 oldPos = player.transform.position;
+            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
+            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+
+            RaycastHit newOriginToDownHitInfo;
+            RaycastHit OldToNewOriginHitInfo;
+            if (!Physics.Raycast(oldRayOrigin, moveDir, out OldToNewOriginHitInfo, speed, groundLayer))
+            {
+                if (Physics.Raycast(newRayOrigin, Vector3.down, out newOriginToDownHitInfo, 2.1f, groundLayer))
+                {
+
+                    Vector3 groundPoint = newOriginToDownHitInfo.point;
+                    Vector3 groundNormal = newOriginToDownHitInfo.normal;
+                    Vector3 reflectedDir = Vector3.Reflect(Vector3.down, groundNormal);
+
+                    float angle = Vector3.Angle(groundNormal, reflectedDir);
+
+                    if (angle > stepAngle)
+                    {
+                        Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
+                        player.transform.position += delfectedDir * speed;
+                    }
+                    else
+                    {
+                        if ((groundPoint.y - newPos.y) < stepHeight)
+                        {
+
+                            Vector3 movePos = new Vector3(newPos.x, groundPoint.y, newPos.z);
+                            player.transform.position = movePos;
+                        }
+                        else
+                        {
+                            Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.y);
+                            player.transform.position += delfectedDir * speed * 4;
+                        }
+                    }
+                }
+                else
+                {
+                    player.transform.position = newPos;
+                }
+            }
+            else
+            {
+                Vector3 wallNormal = OldToNewOriginHitInfo.normal;
+                Vector3 reflectedDir = Vector3.Reflect(moveDir, wallNormal);
+
+                Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
+                player.transform.position += delfectedDir * speed;
+
+                break;
+            }
+
+        }
+
+        //wall check
+        bool wallHit = false;
+        for (int i = 1; i < 5; i++)
+        {
+            Vector3 oldRayOrigin = rayOrigins[i];
+            Vector3 oldPos = player.transform.position;
+            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
+            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+
+            RaycastHit OldToNewOriginHitInfo;
+            if (Physics.Raycast(oldRayOrigin, moveDir, out OldToNewOriginHitInfo, speed, groundLayer))
+            {
+                wallHit = true;
+
+                Vector3 wallNormal = OldToNewOriginHitInfo.normal;
+                Vector3 reflectedDir = Vector3.Reflect(moveDir, wallNormal);
+
+                Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
+                player.transform.position += delfectedDir * speed;
+
+                break;
             }
         }
 
+        if (wallHit) return;
 
+        //slop
+
+        {
+            Vector3 oldRayOrigin = rayOrigins[0];
+            Vector3 oldPos = player.transform.position;
+            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
+            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+
+            RaycastHit newOriginToDownHitInfo;
+            if (Physics.Raycast(newRayOrigin, Vector3.down, out newOriginToDownHitInfo, 2.1f, groundLayer))
+            {
+
+                Vector3 groundPoint = newOriginToDownHitInfo.point;
+                Vector3 groundNormal = newOriginToDownHitInfo.normal;
+                Vector3 reflectedDir = Vector3.Reflect(Vector3.down, groundNormal);
+
+                float angle = Vector3.Angle(groundNormal, reflectedDir);
+
+                if (angle > stepAngle)
+                {
+                    Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
+                    player.transform.position += delfectedDir * speed;
+                }
+                else
+                {
+                    if ((groundPoint.y - newPos.y) < stepHeight)
+                    {
+
+                        Vector3 movePos = new Vector3(newPos.x, groundPoint.y, newPos.z);
+                        player.transform.position = movePos;
+                    }
+                    else
+                    {
+                        Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.y);
+                        player.transform.position += delfectedDir * speed * 4;
+                    }
+                }
+            }
+            else
+            {
+                player.transform.position = newPos;
+            }
+        }
 
     }
+
+
 
     void ApplyGravity()
     {
@@ -99,7 +258,7 @@ public class PlayerController : MonoBehaviour
     //-----------------------------------------------//
     private class PSIdle : PlayerState
     {
-        
+
         public override PlayerStateE Update()
         {
             // if(playerInput.xAxis != 0 || playerInput.yAxis != 0)
@@ -120,12 +279,12 @@ public class PlayerController : MonoBehaviour
         public override PlayerStateE Update()
         {
 
-            if(playerInput.xAxis != 0 || playerInput.yAxis != 0)
-                if(playerInput.running)
+            if (playerInput.xAxis != 0 || playerInput.yAxis != 0)
+                if (playerInput.running)
                     return PlayerStateE.running;
                 else
                     return PlayerStateE.walking;
-            
+
             return PlayerStateE.idle;
         }
         public override void Action()
@@ -137,8 +296,8 @@ public class PlayerController : MonoBehaviour
     {
         public override PlayerStateE Update()
         {
-            if(playerInput.running)
-                if(playerInput.xAxis != 0 || playerInput.yAxis != 0)
+            if (playerInput.running)
+                if (playerInput.xAxis != 0 || playerInput.yAxis != 0)
                     return PlayerStateE.running;
             return PlayerStateE.walking;
         }
@@ -200,7 +359,7 @@ public enum PlayerStateE
     dash,
     fallStart, falling,
     attack1Start, attack1ing,
-    
+
 }
 //
 /*
