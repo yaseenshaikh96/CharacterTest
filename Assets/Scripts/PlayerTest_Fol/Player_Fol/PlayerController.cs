@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
 
-    [SerializeField] private BoxCollider playerCollider;
+    [SerializeField] private CapsuleCollider playerCollider;
     [SerializeField] private SkinnedMeshRenderer myRenderer;
     [SerializeField] private GameObject player;
     [SerializeField] private PlayerInput playerInput;
@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour
     PlayerState currentPlayerState;
     PlayerState[] playerStates;
     //----------------------------------------------------//
+    Vector3 colliderHalfExtents = new Vector3(1f / 2, 2f / 2, 1f / 2);
+    string msg;
     //--------------------------------------------------//
 
     void Start()
@@ -70,172 +72,92 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
+        Move();
         if (GroundCheck())
         {
-            Debug.Log("Grounded");
-            Move();
+            msg += "grounded, ";
         }
         else
         {
-            ApplyGravity();
+            // ApplyGravity();
         }
-
+        Debug.Log(msg);
+        msg = "";
     }
     bool GroundCheck()
     {
-        Vector3 halfExtents = new Vector3(1f / 2, 2f / 2, 1f / 2);
-        Vector3 center = player.transform.TransformPoint(new Vector3(0, 1, 0));
-        return Physics.CheckBox(center, halfExtents, player.transform.rotation, groundLayer);
+        float quaterHeight = playerCollider.height * 0.25f;
+        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0));
+        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0));
+
+        return Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer);
     }
 
     void Move()
     {
-        float speed = 0.05f;
-        float stepAngle = 45f; //deg
         float stepHeight = 0.05f;
+        float speed = 0.05f;
         float hori = Input.GetAxisRaw("Horizontal");
-        float velo = Input.GetAxisRaw("Vertical");
+        float vert = Input.GetAxisRaw("Vertical");
+        Vector3 moveDir = (new Vector3(hori, 0, vert)).normalized;
 
-        Vector3 moveDir = (new Vector3(hori, 0, velo)).normalized;
+        Vector3 oldPos = player.transform.position;
+        Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (vert * speed));
+        Vector3 newPosYModded;
 
-        Vector3[] rayOrigins = new Vector3[5];
-        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0, 2, 0)); // center
-        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0.5f, 2, 0.5f)); // top right
-        rayOrigins[0] = player.transform.TransformPoint(new Vector3(-0.5f, 2, 0.5f)); // top left
-        rayOrigins[0] = player.transform.TransformPoint(new Vector3(0.5f, 2, -0.5f)); // bot right
-        rayOrigins[0] = player.transform.TransformPoint(new Vector3(-0.5f, 2, -0.5f)); // bot left
-
-        //slop
-
-        for (int i = 1; i < 5; i++)
+        float quaterHeight = playerCollider.height * 0.25f;
+        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0));
+        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0));
+        point1 += moveDir * speed;
+        point2 += moveDir * speed;
+        Vector3 stepOverRayOrigin = oldPos + new Vector3(0, 0.1f, 0);
+        if (Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer))
         {
-            Vector3 oldRayOrigin = rayOrigins[i];
-            Vector3 oldPos = player.transform.position;
-            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
-            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+            msg += " hit wall, ";
 
-            RaycastHit newOriginToDownHitInfo;
-            RaycastHit OldToNewOriginHitInfo;
-            if (!Physics.Raycast(oldRayOrigin, moveDir, out OldToNewOriginHitInfo, speed, groundLayer))
+
+            RaycastHit wallHitRaycast;
+            if (Physics.Raycast(stepOverRayOrigin, Vector3.forward, out wallHitRaycast, speed, groundLayer))
             {
-                if (Physics.Raycast(newRayOrigin, Vector3.down, out newOriginToDownHitInfo, 2.1f, groundLayer))
-                {
-
-                    Vector3 groundPoint = newOriginToDownHitInfo.point;
-                    Vector3 groundNormal = newOriginToDownHitInfo.normal;
-                    Vector3 reflectedDir = Vector3.Reflect(Vector3.down, groundNormal);
-
-                    float angle = Vector3.Angle(groundNormal, reflectedDir);
-
-                    if (angle > stepAngle)
-                    {
-                        Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
-                        player.transform.position += delfectedDir * speed;
-                    }
-                    else
-                    {
-                        if ((groundPoint.y - newPos.y) < stepHeight)
-                        {
-
-                            Vector3 movePos = new Vector3(newPos.x, groundPoint.y, newPos.z);
-                            player.transform.position = movePos;
-                        }
-                        else
-                        {
-                            Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.y);
-                            player.transform.position += delfectedDir * speed * 4;
-                        }
-                    }
-                }
-                else
-                {
-                    player.transform.position = newPos;
-                }
+                msg += "cant climb";
             }
             else
             {
-                Vector3 wallNormal = OldToNewOriginHitInfo.normal;
-                Vector3 reflectedDir = Vector3.Reflect(moveDir, wallNormal);
+                msg += "can climb";
 
-                Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
-                player.transform.position += delfectedDir * speed;
-
-                break;
+                RaycastHit climbOverRaycast;
+                Physics.Raycast(newPos, Vector3.up, out climbOverRaycast, stepHeight, groundLayer);
+                newPosYModded = new Vector3(newPos.x, climbOverRaycast.point.y, newPos.z);
             }
 
-        }
-
-        //wall check
-        bool wallHit = false;
-        for (int i = 1; i < 5; i++)
-        {
-            Vector3 oldRayOrigin = rayOrigins[i];
-            Vector3 oldPos = player.transform.position;
-            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
-            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
-
-            RaycastHit OldToNewOriginHitInfo;
-            if (Physics.Raycast(oldRayOrigin, moveDir, out OldToNewOriginHitInfo, speed, groundLayer))
-            {
-                wallHit = true;
-
-                Vector3 wallNormal = OldToNewOriginHitInfo.normal;
-                Vector3 reflectedDir = Vector3.Reflect(moveDir, wallNormal);
-
-                Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
-                player.transform.position += delfectedDir * speed;
-
-                break;
-            }
-        }
-
-        if (wallHit) return;
-
-        //slop
-
-        {
-            Vector3 oldRayOrigin = rayOrigins[0];
-            Vector3 oldPos = player.transform.position;
-            Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
-            Vector3 newRayOrigin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
-
-            RaycastHit newOriginToDownHitInfo;
-            if (Physics.Raycast(newRayOrigin, Vector3.down, out newOriginToDownHitInfo, 2.1f, groundLayer))
-            {
-
-                Vector3 groundPoint = newOriginToDownHitInfo.point;
-                Vector3 groundNormal = newOriginToDownHitInfo.normal;
-                Vector3 reflectedDir = Vector3.Reflect(Vector3.down, groundNormal);
-
-                float angle = Vector3.Angle(groundNormal, reflectedDir);
-
-                if (angle > stepAngle)
-                {
-                    Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.z);
-                    player.transform.position += delfectedDir * speed;
-                }
-                else
-                {
-                    if ((groundPoint.y - newPos.y) < stepHeight)
-                    {
-
-                        Vector3 movePos = new Vector3(newPos.x, groundPoint.y, newPos.z);
-                        player.transform.position = movePos;
-                    }
-                    else
-                    {
-                        Vector3 delfectedDir = new Vector3(reflectedDir.x, 0, reflectedDir.y);
-                        player.transform.position += delfectedDir * speed * 4;
-                    }
-                }
-            }
-            else
-            {
-                player.transform.position = newPos;
-            }
         }
 
     }
+
+    // void Move()
+    // {
+
+    //     RaycastHit raycastHitInfo;
+    //     if (Physics.BoxCast(moveCollider.transform.position, colliderHalfExtents, moveDir, out raycastHitInfo, moveCollider.transform.rotation, speed, groundLayer))
+    //     {
+    //         Vector3 wallPoint = raycastHitInfo.point;
+    //         Vector3 wallnormal = raycastHitInfo.normal;
+    //         Vector3 reflectedDir = Vector3.Reflect(moveDir, wallnormal);
+
+    //         if(Physics.CheckBox(reflectedDir * speed, colliderHalfExtents, moveCollider.transform.rotation, groundLayer))
+    //             return;
+
+    //         Vector3 reflectedNotY = new Vector3(reflectedDir.x, 0, reflectedDir.z);
+
+    //         player.transform.position += reflectedNotY * speed;
+    //     }
+    //     else
+    //     {
+    //         player.transform.position += moveDir * speed;
+    //     }
+
+
+    // }
 
 
 
@@ -248,7 +170,7 @@ public class PlayerController : MonoBehaviour
 
     private abstract class PlayerState
     {
-        public static BoxCollider playerCollider;
+        public static CapsuleCollider playerCollider;
         public static PlayerController playerController;
         public static PlayerInput playerInput;
         public static LayerMask groundLayer;
