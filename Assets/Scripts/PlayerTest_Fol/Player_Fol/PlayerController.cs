@@ -34,8 +34,8 @@ public class PlayerController : MonoBehaviour
         playerStates[2] = new PSRunning();
         playerStates[3] = new PSJumpStart();
         playerStates[4] = new PSJumping();
-        playerStates[4] = new PSJumpEnd();
-        playerStates[4] = new PSDash();
+        playerStates[5] = new PSJumpEnd();
+        playerStates[6] = new PSDash();
         currentPlayerState = playerStates[0];
     }
 
@@ -72,7 +72,7 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
-        Move();
+        MoveOld();
         if (GroundCheck())
         {
             msg += "grounded, ";
@@ -92,8 +92,64 @@ public class PlayerController : MonoBehaviour
 
         return Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer);
     }
+    /*
+    void Move(vector3 dir) {
+        dir = dir.normalize;
+        if(notGrounded)
+            falling;
+        
+        check if move possible
+            cast forward.
+            if hit
+                then check if we can climb over
+                cast up from new pos
+                if hit 
+                    cant move forward
+                    move side ways using normals
+                else 
+                    move forword to newPos
+            else
+                move forword regularly
 
-    void Move()
+                
+                
+    }
+    */
+    void Move(Vector3 dir)
+    {
+        // float stepHeight = 0.05f;
+        float speed = 0.05f;
+        dir = dir.normalized;
+        Vector3 oldPos = player.transform.position;
+        Vector3 newPos = oldPos + (dir * speed);
+
+        if (CheckPlayerCapsule(newPos))
+        {
+            // climbover
+            //if can then do it
+            // else move sideways
+
+        }
+        else
+        {
+            //move normal
+        }
+
+
+
+    }
+
+    bool CheckPlayerCapsule(Vector3 position) // position of center of collider in worldspace
+    {
+
+        float quaterHeight = playerCollider.height * 0.25f;
+        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0) + position);
+        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0) + position);
+
+        return Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer);
+    }
+
+    void MoveOld()
     {
         float stepHeight = 0.05f;
         float speed = 0.05f;
