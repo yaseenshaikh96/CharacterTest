@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject player;
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Material markerMaterial;
     //------------------------------------------------------//
     PlayerStateE currentPlayerStateE;
     PlayerStateE[] currentPlayerStateEs;
@@ -17,6 +18,7 @@ public class PlayerController : MonoBehaviour
     PlayerState[] playerStates;
     //----------------------------------------------------//
     Vector3 colliderHalfExtents = new Vector3(1f / 2, 2f / 2, 1f / 2);
+    Vector3 gravity;
     string msg;
     //--------------------------------------------------//
 
@@ -72,17 +74,17 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
-        MoveOld();
-        if (GroundCheck())
-        {
-            msg += "grounded, ";
-        }
-        else
-        {
-            // ApplyGravity();
-        }
-        Debug.Log(msg);
-        msg = "";
+        MoveA(player.transform.forward);
+        // if (GroundCheck())
+        // {
+        //     msg += "grounded, ";
+        // }
+        // else
+        // {
+        //     // ApplyGravity();
+        // }
+        // Debug.Log(msg);
+        // msg = "";
     }
     bool GroundCheck()
     {
@@ -109,45 +111,86 @@ public class PlayerController : MonoBehaviour
                 else 
                     move forword to newPos
             else
-                move forword regularly
-
-                
-                
+                move forword regularly   
     }
     */
-    void Move(Vector3 dir)
+    GameObject marker, marker2, marker3, marker4, marker5;
+    void MoveA(Vector3 dir)
     {
-        // float stepHeight = 0.05f;
-        float speed = 0.05f;
-        dir = dir.normalized;
-        Vector3 oldPos = player.transform.position;
+        float stepHeight = 1f;
+        GameObject.Destroy(marker);
+        GameObject.Destroy(marker2);
+        GameObject.Destroy(marker3);
+        float speed = 1f;
+        Vector3 oldPos = player.transform.position + (Vector3.up * 0.01f);
         Vector3 newPos = oldPos + (dir * speed);
 
-        if (CheckPlayerCapsule(newPos))
+        RaycastHit raycastHitWallCheck;
+        if (CheckCapsuleCast(playerCollider, playerCollider.transform.position, out raycastHitWallCheck, dir, speed))
         {
-            // climbover
-            //if can then do it
-            // else move sideways
+            // Debug.Log("HitWall!");
+            marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker.transform.position = raycastHitWallCheck.point;
+            marker.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            //ray up to surface of wall
+            RaycastHit raycastHitUpToWallSurface;
+            Vector3 wallSurfaceorigin = newPos + (Vector3.up * stepHeight);
+
+            // marker3 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // marker3.transform.position = wallSurfaceorigin;
+            // marker3.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            if (Physics.Raycast(wallSurfaceorigin, Vector3.down, out raycastHitUpToWallSurface, stepHeight, groundLayer))
+            {
+                // Debug.Log("Hit Surface");
+                marker2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                marker2.transform.position = raycastHitUpToWallSurface.point;
+                marker2.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+                // check if space above
+                if (CheckCapsule(playerCollider, raycastHitUpToWallSurface.point + (Vector3.up * 0.01f)))
+                {
+                    Debug.Log("No space above");
+                }
+
+            }
 
         }
-        else
-        {
-            //move normal
-        }
-
-
-
     }
 
-    bool CheckPlayerCapsule(Vector3 position) // position of center of collider in worldspace
+    bool CheckCapsuleCast(CapsuleCollider collider, Vector3 position, out RaycastHit raycastHit, Vector3 dir, float maxDist)
     {
+        Vector3 posOffset = collider.transform.position - position;
+        float quaterHeight = collider.height * 0.25f;
+        float radius = collider.radius;
+        Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
+        Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
 
-        float quaterHeight = playerCollider.height * 0.25f;
-        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0) + position);
-        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0) + position);
 
-        return Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer);
+        return Physics.CapsuleCast(point1, point2, radius, dir, out raycastHit, radius + maxDist, groundLayer);
+
     }
+    bool CheckCapsule(CapsuleCollider collider, Vector3 position)
+    {
+        Destroy(marker4);
+        Destroy(marker5);
+        Vector3 posOffset = position - collider.transform.position;
+        float quaterHeight = collider.height * 0.25f;
+        Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
+        Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
+
+        marker4 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker4.transform.position = point1;
+        marker4.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+        marker5 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker5.transform.position = point2;
+        marker5.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+        
+        return Physics.CheckCapsule(point1, point2, collider.radius, groundLayer);
+    }
+
+
 
     void MoveOld()
     {
