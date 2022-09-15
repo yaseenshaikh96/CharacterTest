@@ -19,7 +19,6 @@ public class PlayerController : MonoBehaviour
     //----------------------------------------------------//
     Vector3 colliderHalfExtents = new Vector3(1f / 2, 2f / 2, 1f / 2);
     Vector3 gravity;
-    string msg;
     //--------------------------------------------------//
 
     void Start()
@@ -75,16 +74,7 @@ public class PlayerController : MonoBehaviour
         currentPlayerState.Action();
 
         MoveA(player.transform.forward);
-        // if (GroundCheck())
-        // {
-        //     msg += "grounded, ";
-        // }
-        // else
-        // {
-        //     // ApplyGravity();
-        // }
-        // Debug.Log(msg);
-        // msg = "";
+
     }
     bool GroundCheck()
     {
@@ -189,74 +179,6 @@ public class PlayerController : MonoBehaviour
         
         return Physics.CheckCapsule(point1, point2, collider.radius, groundLayer);
     }
-
-
-
-    void MoveOld()
-    {
-        float stepHeight = 0.05f;
-        float speed = 0.05f;
-        float hori = Input.GetAxisRaw("Horizontal");
-        float vert = Input.GetAxisRaw("Vertical");
-        Vector3 moveDir = (new Vector3(hori, 0, vert)).normalized;
-
-        Vector3 oldPos = player.transform.position;
-        Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (vert * speed));
-        Vector3 newPosYModded;
-
-        float quaterHeight = playerCollider.height * 0.25f;
-        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0));
-        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0));
-        point1 += moveDir * speed;
-        point2 += moveDir * speed;
-        Vector3 stepOverRayOrigin = oldPos + new Vector3(0, 0.1f, 0);
-        if (Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer))
-        {
-            msg += " hit wall, ";
-
-
-            RaycastHit wallHitRaycast;
-            if (Physics.Raycast(stepOverRayOrigin, Vector3.forward, out wallHitRaycast, speed, groundLayer))
-            {
-                msg += "cant climb";
-            }
-            else
-            {
-                msg += "can climb";
-
-                RaycastHit climbOverRaycast;
-                Physics.Raycast(newPos, Vector3.up, out climbOverRaycast, stepHeight, groundLayer);
-                newPosYModded = new Vector3(newPos.x, climbOverRaycast.point.y, newPos.z);
-            }
-
-        }
-
-    }
-
-    // void Move()
-    // {
-
-    //     RaycastHit raycastHitInfo;
-    //     if (Physics.BoxCast(moveCollider.transform.position, colliderHalfExtents, moveDir, out raycastHitInfo, moveCollider.transform.rotation, speed, groundLayer))
-    //     {
-    //         Vector3 wallPoint = raycastHitInfo.point;
-    //         Vector3 wallnormal = raycastHitInfo.normal;
-    //         Vector3 reflectedDir = Vector3.Reflect(moveDir, wallnormal);
-
-    //         if(Physics.CheckBox(reflectedDir * speed, colliderHalfExtents, moveCollider.transform.rotation, groundLayer))
-    //             return;
-
-    //         Vector3 reflectedNotY = new Vector3(reflectedDir.x, 0, reflectedDir.z);
-
-    //         player.transform.position += reflectedNotY * speed;
-    //     }
-    //     else
-    //     {
-    //         player.transform.position += moveDir * speed;
-    //     }
-
-
-    // }
 
 
 
@@ -382,61 +304,3 @@ public enum PlayerStateE
     attack1Start, attack1ing,
 
 }
-//
-/*
-        float upOffset = 0f;
-        Vector3 center = player.transform.TransformPoint(new Vector3(0, 1, 0));
-
-        while(Physics.CheckBox(center, halfExtents, player.transform.rotation, groundLayer)) {
-            Debug.Log("time: " + Time.deltaTime);
-            center = player.transform.TransformPoint(new Vector3(0, center.y + 0.01f, 0));
-            upOffset += 0.02f;
-        }
-*/
-/*
-    bool GroundCheck()
-    {
-        Vector3 center = player.transform.TransformPoint(new Vector3(0, 1, 0));
-        return Physics.CheckBox(center, halfExtents, player.transform.rotation, groundLayer);
-    }
-    void ApplyGravity() 
-    {
-        velocity.y =  -0.02f;
-    }
-
-    void ApplyVelocity()
-    {
-        player.transform.position += velocity;
-        player.transform.position = new Vector3(player.transform.position.x, upOffset,player.transform.position.z);
-    }
-
-    void Move() 
-    {
-        float stepHeight = 0.1f;
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-
-        Vector3 oldPos = player.transform.position;
-        Vector3 newPos= new Vector3(oldPos.x + (horizontal * 0.08f), oldPos.y, oldPos.z + (vertical * 0.08f));
-
-        RaycastHit raycastHitInfo;
-        Physics.Raycast(newPos, Vector3.down, out raycastHitInfo, 2f, groundLayer);
-
-        if(raycastHitInfo.point.y - newPos.y < stepHeight)    
-        {
-            Debug.Log("ray.y: " + raycastHitInfo.point.y + " newpos.y: " + newPos.y + " diff: " + (raycastHitInfo.point.y - newPos.y));
-            velocity.z += vertical * 0.08f;
-            velocity.x += horizontal * 0.08f;
-            upOffset = raycastHitInfo.point.y;
-        }else {
-            upOffset = oldPos.y;
-        }
-
-    }
-    bool GroundAngleCheck()
-    {
-        Vector3 center = groundAngleCollider.transform.TransformPoint(new Vector3(0, 0.1f, 0));
-        Vector3 halfExtents = new Vector3(1.2f / 2, 0.2f / 2, 1.2f / 2);
-        return Physics.CheckBox(center, halfExtents, player.transform.rotation, groundLayer);
-    }
-*/
