@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
     PlayerState[] playerStates;
     //----------------------------------------------------//
     Vector3 colliderHalfExtents = new Vector3(1f / 2, 2f / 2, 1f / 2);
-    Vector3 gravity;
+    Vector3 gravityAcc = new Vector3(0, -0.02f, 0), gravityVelo;
     //--------------------------------------------------//
 
     void Start()
@@ -38,33 +38,35 @@ public class PlayerController : MonoBehaviour
         playerStates[5] = new PSJumpEnd();
         playerStates[6] = new PSDash();
         currentPlayerState = playerStates[0];
+
+        gravityVelo = new Vector3(0, 0, 0);
     }
 
-    void OnDrawGizmos()
-    {
-        float speed = 0.05f;
-        float hori = Input.GetAxisRaw("Horizontal");
-        float velo = Input.GetAxisRaw("Vertical");
-        Vector3 oldPos = player.transform.position;
-        Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
-        Vector3 origin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
+    // void OnDrawGizmos()
+    // {
+    //     float speed = 0.05f;
+    //     float hori = Input.GetAxisRaw("Horizontal");
+    //     float velo = Input.GetAxisRaw("Vertical");
+    //     Vector3 oldPos = player.transform.position;
+    //     Vector3 newPos = new Vector3(oldPos.x + (hori * speed), oldPos.y, oldPos.z + (velo * speed));
+    //     Vector3 origin = new Vector3(newPos.x, newPos.y + 2, newPos.z);
 
-        RaycastHit raycastHitInfo;
-        if (Physics.Raycast(origin, Vector3.down, out raycastHitInfo, 5f, groundLayer))
-        {
-            Gizmos.color = Color.white;
-            Gizmos.DrawLine(origin, raycastHitInfo.point);
-            Vector3 normal = raycastHitInfo.normal;
-            Vector3 reflected = Vector3.Reflect(Vector3.down, normal);
+    //     RaycastHit raycastHitInfo;
+    //     if (Physics.Raycast(origin, Vector3.down, out raycastHitInfo, 5f, groundLayer))
+    //     {
+    //         Gizmos.color = Color.white;
+    //         Gizmos.DrawLine(origin, raycastHitInfo.point);
+    //         Vector3 normal = raycastHitInfo.normal;
+    //         Vector3 reflected = Vector3.Reflect(Vector3.down, normal);
 
-            RaycastHit raycastHitInfo2;
-            Physics.Raycast(raycastHitInfo.point, reflected, out raycastHitInfo2, 5, groundLayer);
-            Vector3 otherPoint = raycastHitInfo.point + reflected;
+    //         RaycastHit raycastHitInfo2;
+    //         Physics.Raycast(raycastHitInfo.point, reflected, out raycastHitInfo2, 5, groundLayer);
+    //         Vector3 otherPoint = raycastHitInfo.point + reflected;
 
-            Gizmos.color = Color.black;
-            Gizmos.DrawLine(raycastHitInfo.point, otherPoint);
-        }
-    }
+    //         Gizmos.color = Color.black;
+    //         Gizmos.DrawLine(raycastHitInfo.point, otherPoint);
+    //     }
+    // }
 
 
     void Update()
@@ -73,16 +75,24 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
+        if (GroundCheck())
+        {
+            // Debug.Log("Grounded");
+            MoveA(player.transform.forward);
+            gravityVelo = Vector3.zero;
+        }
+        else
+        {
+            // Debug.Log("Gravity");
+            ApplyGravity();
+        }
+
         MoveA(player.transform.forward);
 
     }
     bool GroundCheck()
     {
-        float quaterHeight = playerCollider.height * 0.25f;
-        Vector3 point1 = playerCollider.transform.TransformPoint(new Vector3(0, quaterHeight, 0));
-        Vector3 point2 = playerCollider.transform.TransformPoint(new Vector3(0, -quaterHeight, 0));
-
-        return Physics.CheckCapsule(point1, point2, playerCollider.radius, groundLayer);
+        return CheckCapsule(playerCollider, player.transform.position - (Vector3.up * 0.01f));
     }
     /*
     void Move(vector3 dir) {
@@ -104,79 +114,116 @@ public class PlayerController : MonoBehaviour
                 move forword regularly   
     }
     */
-    GameObject marker, marker2, marker3, marker4, marker5;
+    GameObject marker, marker2, marker3, marker4, marker5, marker6, marker7;
     void MoveA(Vector3 dir)
     {
-        float stepHeight = 1f;
+        float radius = playerCollider.radius;
+        float speed = 0.03f;
+        float hori = Input.GetAxisRaw("Horizontal");
+        float Vert = Input.GetAxisRaw("Vertical");
+
+        if (hori == 0 && Vert == 0)
+            return;
+
+        dir = new Vector3(hori, 0, Vert).normalized;
+
+
+        float stepHeight = 1.1f;
         GameObject.Destroy(marker);
         GameObject.Destroy(marker2);
         GameObject.Destroy(marker3);
-        float speed = 1f;
-        Vector3 oldPos = player.transform.position + (Vector3.up * 0.01f);
+        GameObject.Destroy(marker6);
+        GameObject.Destroy(marker7);
+        Vector3 oldPos = player.transform.position; // + (Vector3.up * 0.01f); // offset
         Vector3 newPos = oldPos + (dir * speed);
 
         RaycastHit raycastHitWallCheck;
-        if (CheckCapsuleCast(playerCollider, playerCollider.transform.position, out raycastHitWallCheck, dir, speed))
+        if (CheckCapsuleCast(playerCollider, oldPos, out raycastHitWallCheck, dir, speed))
         {
-            // Debug.Log("HitWall!");
-            marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            marker.transform.position = raycastHitWallCheck.point;
-            marker.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            Debug.Log("HitWall!");
+            // marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // marker.transform.position = raycastHitWallCheck.point;
+            // marker.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            // marker.GetComponent<Renderer>().material.SetColor("_Color", Color.black);
+
 
             //ray up to surface of wall
             RaycastHit raycastHitUpToWallSurface;
             Vector3 wallSurfaceorigin = newPos + (Vector3.up * stepHeight);
 
-            // marker3 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            // marker3.transform.position = wallSurfaceorigin;
-            // marker3.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            marker3 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker3.transform.position = wallSurfaceorigin;
+            marker3.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            marker3.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
+            marker7 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker7.transform.position = wallSurfaceorigin + (Vector3.down * stepHeight);
+            marker7.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            marker7.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
 
-            if (Physics.Raycast(wallSurfaceorigin, Vector3.down, out raycastHitUpToWallSurface, stepHeight, groundLayer))
+
+            if (CheckCapsuleCast(playerCollider, wallSurfaceorigin, out raycastHitUpToWallSurface, Vector3.down, stepHeight))
             {
-                // Debug.Log("Hit Surface");
+                Debug.Log("Hit Surface");
                 marker2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 marker2.transform.position = raycastHitUpToWallSurface.point;
                 marker2.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
 
-                // check if space above
-                if (CheckCapsule(playerCollider, raycastHitUpToWallSurface.point + (Vector3.up * 0.01f)))
+                if (raycastHitUpToWallSurface.point.y - oldPos.y < stepHeight)
                 {
-                    Debug.Log("No space above");
-                }
+                    Debug.Log("Value less than");
+                    // check if space above
+                    if (!CheckCapsule(playerCollider, raycastHitUpToWallSurface.point + (Vector3.up * 0.05f)))
+                    {
+                        Debug.Log("space above");
+                        marker6 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                        marker6.transform.position = raycastHitUpToWallSurface.point;
+                        marker6.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                        marker6.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
 
+
+
+                        player.transform.position = raycastHitUpToWallSurface.point+ (Vector3.up * 0.05f);
+                    }
+                }
             }
 
+        }
+        else
+        {
+            player.transform.position = newPos;
         }
     }
 
     bool CheckCapsuleCast(CapsuleCollider collider, Vector3 position, out RaycastHit raycastHit, Vector3 dir, float maxDist)
     {
-        Vector3 posOffset = collider.transform.position - position;
-        float quaterHeight = collider.height * 0.25f;
-        float radius = collider.radius;
-        Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
-        Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
-
-
-        return Physics.CapsuleCast(point1, point2, radius, dir, out raycastHit, radius + maxDist, groundLayer);
-
-    }
-    bool CheckCapsule(CapsuleCollider collider, Vector3 position)
-    {
         Destroy(marker4);
         Destroy(marker5);
         Vector3 posOffset = position - collider.transform.position;
         float quaterHeight = collider.height * 0.25f;
+        float radius = collider.radius;
         Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
         Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
 
         marker4 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         marker4.transform.position = point1;
         marker4.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+        marker4.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
         marker5 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         marker5.transform.position = point2;
         marker5.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-        
+        marker5.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
+
+        return Physics.CapsuleCast(point1, point2, radius, dir, out raycastHit, maxDist, groundLayer);
+
+    }
+    bool CheckCapsule(CapsuleCollider collider, Vector3 position)
+    {
+        Vector3 posOffset = position - collider.transform.position;
+        float quaterHeight = collider.height * 0.25f;
+        Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
+        Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
+
+
         return Physics.CheckCapsule(point1, point2, collider.radius, groundLayer);
     }
 
@@ -184,7 +231,23 @@ public class PlayerController : MonoBehaviour
 
     void ApplyGravity()
     {
-        player.transform.position += new Vector3(0, -0.02f, 0);
+        gravityVelo += gravityAcc;
+
+        Vector3 oldPos = player.transform.position;
+        Vector3 newPos = player.transform.position + gravityVelo;
+
+        RaycastHit raycastHit;
+        if (Physics.Raycast(oldPos, Vector3.down, out raycastHit, Mathf.Abs(gravityVelo.y), groundLayer))
+        {
+            player.transform.position = raycastHit.point;
+        }
+        else
+        {
+
+            player.transform.position = newPos;
+        }
+
+
     }
 
     //-----------------------------------------------//
