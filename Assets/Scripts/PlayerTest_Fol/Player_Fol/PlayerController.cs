@@ -17,8 +17,9 @@ public class PlayerController : MonoBehaviour
     PlayerState[] playerStates;
     //----------------------------------------------------//
     Vector3 gravityAcc = new Vector3(0, -0.02f, 0), gravityVelo;
-    Vector3 playerDir;
-    float hori, vert;
+    Vector3 playerDir, prePlayerDir;
+    float hori, vert, minorOffset;
+    float currentSpeed, speedInc, maxSpeed;
     MarkerList markerList;
     //--------------------------------------------------//
 
@@ -42,6 +43,10 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[0];
 
         gravityVelo = new Vector3(0, 0, 0);
+        minorOffset = 0.01f;
+        currentSpeed = 0.03f;
+        speedInc = 0.005f;
+        maxSpeed = 0.07f;
 
         markerList.MakeMarker("test", Vector3.one * 20);
         markerList.MakeMarker("FirstHit", Vector3.zero, Color.black);
@@ -49,6 +54,10 @@ public class PlayerController : MonoBehaviour
         markerList.MakeMarker("newPos", Vector3.zero, Color.black);
         markerList.MakeMarker("center", Vector3.zero, Color.black);
         markerList.MakeMarker("halfExtents", Vector3.zero, Color.black);
+        markerList.MakeMarker("center2", Vector3.zero, Color.black);
+        markerList.MakeMarker("halfExtents2", Vector3.zero, Color.black);
+        markerList.MakeMarker("raycastOrigin", Vector3.zero, Color.red);
+        markerList.MakeMarker("newPosYAdj", Vector3.zero, Color.magenta);
 
     }
 
@@ -62,62 +71,132 @@ public class PlayerController : MonoBehaviour
         currentPlayerState = playerStates[(int)currentPlayerStateE];
         currentPlayerState.Action();
 
-        Move2();
+        if (GroundCheck())
+        {
+            Debug.Log("Grounded");
+            gravityVelo.y = 0;
+            Move2();
+        }
+        else
+        {
+            Debug.Log("Gravity");
+            ApplyGravity();
+        }
+
 
     }
     bool GroundCheck()
     {
-        return false;
-        // return CheckCapsule(playerCollider, player.transform.position - (Vector3.up * 0.01f));
+        RaycastHit raycastHit;
+        float groundCheckoffset = minorOffset * 10;
+        if (CheckBoxCast(playerCollider, player.transform.position + (Vector3.up * groundCheckoffset), out raycastHit, Vector3.down, groundCheckoffset * 2))
+        {
+            Vector3 newPosYAdj = new Vector3(player.transform.position.x, raycastHit.point.y, player.transform.position.z);
+            player.transform.position = newPosYAdj;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     void Move2()
     {
-        float speed = 0.03f;
-        // float stepHeight = 1f;
+        float stepHeight = 1f;
+        Debug.Log("Speed: " + currentSpeed);
 
-        // if (hori == 0 && vert == 0)
-        //     return;
-
-        playerDir = new Vector3(hori, 0, vert).normalized;
+        if (hori == 0 && vert == 0)
+        {
+            playerDir = prePlayerDir;
+            if (currentSpeed > 0)
+                currentSpeed -= speedInc;
+            else
+                return;
+        }
+        else
+        {
+            playerDir = new Vector3(hori, 0, vert).normalized;
+            if (currentSpeed < maxSpeed)
+                currentSpeed += speedInc;
+        }
 
         Vector3 oldPos = player.transform.position;
-        Vector3 newPos = oldPos + (playerDir * speed);
+        Vector3 newPos = oldPos + (playerDir * currentSpeed);
 
         markerList.UpdateMarker("oldPos", oldPos);
         markerList.UpdateMarker("newPos", newPos);
 
 
         RaycastHit raycastHit;
-        if (CheckBoxCast(playerCollider, oldPos, out raycastHit, Vector3.down, 1f))
+        if (CheckBoxCast(playerCollider, oldPos, out raycastHit, playerDir, currentSpeed))
         {
-            Debug.Log("Hit!");
-        }else {
+            // can step over?
+            markerList.UpdateMarker("FirstHit", raycastHit.point);
 
+            // check for ground over wall
+            Vector3 raycastOrigin = newPos + (Vector3.up * stepHeight);
+            markerList.UpdateMarker("raycastOrigin", raycastOrigin);
+            RaycastHit raycastHit2;
+
+            if (CheckBoxCastStep(playerCollider, raycastOrigin, out raycastHit2, Vector3.down, stepHeight))
+            {
+                Vector3 newPosYAdj = new Vector3(newPos.x, raycastHit2.point.y, newPos.z);
+
+                if (!CheckBox(playerCollider, newPosYAdj + (Vector3.up * minorOffset)))
+                {
+                    // can climb over!
+                    // Debug.Log("can climb over!");
+                    markerList.UpdateMarker("newPosYAdj", raycastOrigin);
+                    player.transform.position = newPosYAdj;
+                }
+                else
+                {
+                    // Debug.Log("cannot climb over");
+                    // cannot climb over :(
+                    // push sideways
+                }
+            }
+            else
+            {
+                // Debug.Log("climbOver check no hit");
+                // no space above :(
+                // push sideways
+            }
+        }
+        else
+        {
+            player.transform.position = newPos;
             Debug.Log("no Hit!");
         }
-
+        prePlayerDir = playerDir;
     }
+    bool CheckBoxCastStep(BoxCollider collider, Vector3 position, out RaycastHit raycastHit, Vector3 dir, float maxDist)
+    {
+        float y = 0.05f;
+        Vector3 center = position + (Vector3.up * (y / 2));
+        Vector3 halfExtents = new Vector3(collider.size.x, y / 2, collider.size.z);
+        markerList.UpdateMarker("center2", center);
+        markerList.UpdateMarker("halfextents2", halfExtents);
 
+        return Physics.BoxCast(center, halfExtents, dir, out raycastHit, Quaternion.identity, maxDist, groundLayer);
+    }
     bool CheckBoxCast(BoxCollider collider, Vector3 position, out RaycastHit raycastHit, Vector3 dir, float maxDist)
     {
-        Vector3 center = collider.transform.position + (Vector3.up * (collider.size.y / 2));
+        Vector3 center = position + (Vector3.up * (collider.size.y / 2));
         Vector3 halfExtents = collider.size / 2;
         markerList.UpdateMarker("center", center);
         markerList.UpdateMarker("halfextents", halfExtents);
 
-        Debug.Log("center: " + center + ", " + "halfExtents: " + halfExtents);
-
         return Physics.BoxCast(center, halfExtents, dir, out raycastHit, Quaternion.identity, maxDist, groundLayer);
     }
-    // bool CheckCapsule(BoxCollider collider, Vector3 position)
-    // {
-    //     Vector3 posOffset = position - collider.transform.position;
-    //     float quaterHeight = collider.height * 0.25f;
-    //     Vector3 point1 = collider.transform.TransformPoint(new Vector3(0, quaterHeight, 0)) + posOffset;
-    //     Vector3 point2 = collider.transform.TransformPoint(new Vector3(0, collider.height - quaterHeight, 0)) + posOffset;
-    //     return Physics.CheckCapsule(point1, point2, collider.radius, groundLayer);
-    // }
+
+    bool CheckBox(BoxCollider collider, Vector3 position)
+    {
+        Vector3 center = position + (Vector3.up * (collider.size.y / 2));
+        Vector3 halfExtents = collider.size / 2;
+        return Physics.CheckBox(center, halfExtents, Quaternion.identity, groundLayer);
+    }
 
     void ApplyGravity()
     {
@@ -127,17 +206,16 @@ public class PlayerController : MonoBehaviour
         Vector3 newPos = player.transform.position + gravityVelo;
 
         RaycastHit raycastHit;
-        if (Physics.Raycast(oldPos, Vector3.down, out raycastHit, Mathf.Abs(gravityVelo.y), groundLayer))
+
+        if (CheckBoxCast(playerCollider, oldPos, out raycastHit, Vector3.down, Mathf.Abs(gravityVelo.y)))
         {
-            player.transform.position = raycastHit.point;
+            Vector3 newPosYAdj = new Vector3(newPos.x, raycastHit.point.y, newPos.z);
+            player.transform.position = newPosYAdj;
         }
         else
         {
-
             player.transform.position = newPos;
         }
-
-
     }
 
     //-----------------------------------------------//
