@@ -65,7 +65,7 @@ public class MarkerList
             if(v.mName == name)
             {
                 v.mGameObject.transform.position = position;
-                v.mGameObject.transform.LookAt(position+lookAt);
+                v.mGameObject.transform.LookAt(position+lookAt, Vector3.up);
             }
         }
     }

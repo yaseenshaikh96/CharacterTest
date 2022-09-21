@@ -21,11 +21,11 @@ public class PlayerController : MonoBehaviour
     float hori, vert, minorOffset;
     float currentSpeed, speedInc, maxSpeed;
     MarkerList markerList;
+    bool movedLastFrame;
     //--------------------------------------------------//
 
     void Start()
     {
-        markerList = new MarkerList();
         PlayerState.playerController = this;
         PlayerState.playerInput = playerInput;
         PlayerState.playerCollider = playerCollider;
@@ -47,28 +47,30 @@ public class PlayerController : MonoBehaviour
         currentSpeed = 0.03f;
         speedInc = 0.005f;
         maxSpeed = 0.07f;
+        movedLastFrame = false;
 
-        markerList.MakeMarkerVector("test vector up", Vector3.zero, Vector3.up);
-        markerList.MakeMarkerVector("test vector down", Vector3.zero, Vector3.down);
-        markerList.MakeMarkerVector("test vector xz", Vector3.zero, new Vector3(1, 0, 1).normalized);
-        markerList.MakeMarkerVector("test vector yz", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        markerList = new MarkerList();
+        // markerList.MakeMarkerVector("test vector up", Vector3.zero, Vector3.up);
+        // markerList.MakeMarkerVector("test vector down", Vector3.zero, Vector3.down);
+        // markerList.MakeMarkerVector("test vector xz", Vector3.zero, new Vector3(1, 0, 1).normalized);
+        // markerList.MakeMarkerVector("test vector yz", Vector3.zero, new Vector3(0, 1, 1).normalized);
 
-        markerList.MakeMarkerVector("wallNormal", Vector3.zero, new Vector3(0, 1, 1).normalized);
-        markerList.MakeMarkerVector("c1", Vector3.zero, new Vector3(0, 1, 1).normalized);
-        markerList.MakeMarkerVector("c2", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        // markerList.MakeMarkerVector("wallNormal", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        // markerList.MakeMarkerVector("c1", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        // markerList.MakeMarkerVector("c2", Vector3.zero, new Vector3(0, 1, 1).normalized);
         markerList.MakeMarkerVector("playerDir", Vector3.zero, new Vector3(0, 1, 1).normalized);
 
-        markerList.MakeMarker("test", Vector3.one * 20);
-        markerList.MakeMarker("FirstHit", Vector3.zero, Color.black);
-        markerList.MakeMarker("oldPos", Vector3.zero, Color.white);
-        markerList.MakeMarker("newPos", Vector3.zero, Color.black);
-        markerList.MakeMarker("center", Vector3.zero, Color.black);
-        markerList.MakeMarker("halfExtents", Vector3.zero, Color.black);
-        markerList.MakeMarker("center2", Vector3.zero, Color.black);
-        markerList.MakeMarker("halfExtents2", Vector3.zero, Color.black);
-        markerList.MakeMarker("raycastOrigin", Vector3.zero, Color.red);
-        markerList.MakeMarker("newPosYAdj", Vector3.zero, Color.magenta);
-        markerList.MakeMarker("wallPoint", Vector3.zero, Color.magenta);
+        // markerList.MakeMarker("test", Vector3.one * 20);
+        // markerList.MakeMarker("FirstHit", Vector3.zero, Color.black);
+        // markerList.MakeMarker("oldPos", Vector3.zero, Color.white);
+        // markerList.MakeMarker("newPos", Vector3.zero, Color.black);
+        // markerList.MakeMarker("center", Vector3.zero, Color.black);
+        // markerList.MakeMarker("halfExtents", Vector3.zero, Color.black);
+        // markerList.MakeMarker("center2", Vector3.zero, Color.black);
+        // markerList.MakeMarker("halfExtents2", Vector3.zero, Color.black);
+        // markerList.MakeMarker("raycastOrigin", Vector3.zero, Color.red);
+        // markerList.MakeMarker("newPosYAdj", Vector3.zero, Color.magenta);
+        // markerList.MakeMarker("wallPoint", Vector3.zero, Color.magenta);
     }
 
     void Update()
@@ -85,7 +87,7 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log("Grounded");
             gravityVelo.y = 0;
-            // Move2();
+            Move2();
         }
         else
         {
@@ -111,12 +113,27 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    bool FallCheck()
+    {
+        Vector3 oldPos = player.transform.position;
+        RaycastHit raycastHit;
+        if (Physics.Raycast(oldPos - (Vector3.up * minorOffset), Vector3.down, out raycastHit, 0.5f, groundLayer))
+        {
+            Vector3 groundPoint = raycastHit.point;
+            Vector3 groundNormal = raycastHit.normal;
+            float angle = Vector3.Angle(groundNormal, Vector3.forward);
+            if (angle > 45)
+                return true;
+        }
+        return false;
+    }
+
     void Move2()
     {
         float stepHeight = 1f;
         Debug.Log("Speed: " + currentSpeed);
 
-        if (hori == 0 && vert == 0)
+        if (hori == 0 && vert == 0 && movedLastFrame)
         {
             playerDir = prePlayerDir;
             if (currentSpeed > 0)
@@ -133,13 +150,15 @@ public class PlayerController : MonoBehaviour
 
         Vector3 oldPos = player.transform.position;
         Vector3 newPos = oldPos + (playerDir * currentSpeed);
+        markerList.UpdateVector("playerDir", oldPos + (Vector3.up), playerDir);
 
         markerList.UpdateMarker("oldPos", oldPos);
         markerList.UpdateMarker("newPos", newPos);
 
-
+        float raycastdist = currentSpeed < 0.05f ? currentSpeed : 0.05f;
         RaycastHit raycastHit;
-        if (CheckBoxCast(playerCollider, oldPos, out raycastHit, playerDir, currentSpeed))
+        if (CheckBoxCast(playerCollider, oldPos, out raycastHit, playerDir, raycastdist))
+        //|| Physics.Raycast(oldPos, playerDir, out raycastHit, raycastdist, groundLayer))
         {
             // can step over?
             markerList.UpdateMarker("FirstHit", raycastHit.point);
@@ -159,6 +178,7 @@ public class PlayerController : MonoBehaviour
                     // Debug.Log("can climb over!");
                     markerList.UpdateMarker("newPosYAdj", raycastOrigin);
                     player.transform.position = newPosYAdj;
+                    movedLastFrame = true;
                 }
                 else
                 {
@@ -181,10 +201,11 @@ public class PlayerController : MonoBehaviour
         else
         {
             player.transform.position = newPos;
+            movedLastFrame = true;
             Debug.Log("no Hit!");
         }
         prePlayerDir = playerDir;
-
+        movedLastFrame = false;
         void PushSideways(RaycastHit wallHit)
         {
             Vector2 wallNormal = wallHit.normal;
@@ -197,7 +218,7 @@ public class PlayerController : MonoBehaviour
             markerList.UpdateVector("wallNormal", wallPoint, wallNormal);
             markerList.UpdateVector("playerDir", wallPoint, playerDir);
             markerList.UpdateVector("c1", wallPoint, c1);
-            markerList.UpdateVector("c2", wallPoint, wallTangent);
+            markerList.UpdateVector("wallTangent", wallPoint, wallTangent);
 
         }
     }
@@ -221,6 +242,7 @@ public class PlayerController : MonoBehaviour
 
         return Physics.BoxCast(center, halfExtents, dir, out raycastHit, Quaternion.identity, maxDist, groundLayer);
     }
+
 
     bool CheckBox(BoxCollider collider, Vector3 position)
     {
