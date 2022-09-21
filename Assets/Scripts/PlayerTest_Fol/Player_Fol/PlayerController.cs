@@ -48,6 +48,16 @@ public class PlayerController : MonoBehaviour
         speedInc = 0.005f;
         maxSpeed = 0.07f;
 
+        markerList.MakeMarkerVector("test vector up", Vector3.zero, Vector3.up);
+        markerList.MakeMarkerVector("test vector down", Vector3.zero, Vector3.down);
+        markerList.MakeMarkerVector("test vector xz", Vector3.zero, new Vector3(1, 0, 1).normalized);
+        markerList.MakeMarkerVector("test vector yz", Vector3.zero, new Vector3(0, 1, 1).normalized);
+
+        markerList.MakeMarkerVector("wallNormal", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        markerList.MakeMarkerVector("c1", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        markerList.MakeMarkerVector("c2", Vector3.zero, new Vector3(0, 1, 1).normalized);
+        markerList.MakeMarkerVector("playerDir", Vector3.zero, new Vector3(0, 1, 1).normalized);
+
         markerList.MakeMarker("test", Vector3.one * 20);
         markerList.MakeMarker("FirstHit", Vector3.zero, Color.black);
         markerList.MakeMarker("oldPos", Vector3.zero, Color.white);
@@ -58,7 +68,7 @@ public class PlayerController : MonoBehaviour
         markerList.MakeMarker("halfExtents2", Vector3.zero, Color.black);
         markerList.MakeMarker("raycastOrigin", Vector3.zero, Color.red);
         markerList.MakeMarker("newPosYAdj", Vector3.zero, Color.magenta);
-
+        markerList.MakeMarker("wallPoint", Vector3.zero, Color.magenta);
     }
 
     void Update()
@@ -75,7 +85,7 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log("Grounded");
             gravityVelo.y = 0;
-            Move2();
+            // Move2();
         }
         else
         {
@@ -154,11 +164,15 @@ public class PlayerController : MonoBehaviour
                 {
                     // Debug.Log("cannot climb over");
                     // cannot climb over :(
+
+
+                    PushSideways(raycastHit);
                     // push sideways
                 }
             }
             else
             {
+                PushSideways(raycastHit);
                 // Debug.Log("climbOver check no hit");
                 // no space above :(
                 // push sideways
@@ -170,7 +184,24 @@ public class PlayerController : MonoBehaviour
             Debug.Log("no Hit!");
         }
         prePlayerDir = playerDir;
+
+        void PushSideways(RaycastHit wallHit)
+        {
+            Vector2 wallNormal = wallHit.normal;
+            Vector3 wallPoint = wallHit.point;
+            Vector3 c1 = Vector3.Cross(wallNormal, playerDir);
+            Vector3 wallTangent = Vector3.Cross(c1, wallNormal);
+
+            markerList.UpdateMarker("wallPoint", wallPoint);
+
+            markerList.UpdateVector("wallNormal", wallPoint, wallNormal);
+            markerList.UpdateVector("playerDir", wallPoint, playerDir);
+            markerList.UpdateVector("c1", wallPoint, c1);
+            markerList.UpdateVector("c2", wallPoint, wallTangent);
+
+        }
     }
+
     bool CheckBoxCastStep(BoxCollider collider, Vector3 position, out RaycastHit raycastHit, Vector3 dir, float maxDist)
     {
         float y = 0.05f;

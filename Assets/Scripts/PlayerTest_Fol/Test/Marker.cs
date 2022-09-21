@@ -2,8 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class Marker : MonoBehaviour
+{
+    [SerializeField] private GameObject VectorGO;
+    void Start()
+    {
+        MarkerList.vectorGO = VectorGO;
+    }
+}
+
 public class MarkerList
 {
+    public static GameObject vectorGO;
     public List<Marker> mMarkers;
     public List<MarkerVector> mMarkerVectors;
     public GameObject mParentGO;
@@ -11,6 +21,7 @@ public class MarkerList
     public MarkerList()
     {
         mMarkers = new List<Marker>();
+        mMarkerVectors = new List<MarkerVector>();
         mParentGO = new UnityEngine.GameObject("Markers");
     }
     public void MakeMarker(string name, Vector3 position, Color? color = null)
@@ -28,24 +39,43 @@ public class MarkerList
         mMarkers.Add(marker);
     }
 
-    public void MakeMarkerVector(string name, Vector3 position, Vector3 dir, Color? color = null)
+    public void MakeMarkerVector(string name, Vector3 position, Vector3 lookAt, Color? color = null)
     {
         if (color == null)
             color = Color.white;
 
-        GameObject sphere = UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cylinder);
-        sphere.transform.localScale = Vector3.one * 0.2f;
-        sphere.GetComponent<Renderer>().material.color = (Color)color;
+        GameObject markerVectorParent = UnityEngine.GameObject.Instantiate(vectorGO);
+        markerVectorParent.transform.position = position;
 
-        MarkerVector markerVector = new MarkerVector(name, position, dir, (Color)color, sphere);
+        markerVectorParent.GetComponentInChildren<Renderer>().material.color = (Color)color;
+        markerVectorParent.transform.parent = mParentGO.transform;
+        markerVectorParent.gameObject.name = "Marker " + name;
 
-        mMarkerVectors.Add(markerVector);
+        markerVectorParent.transform.LookAt(lookAt + position, Vector3.up);
+
+        MarkerVector markerVectorObj = new MarkerVector(name, position, lookAt, (Color)color, markerVectorParent);
+
+        mMarkerVectors.Add(markerVectorObj);
     }
+
+    public void UpdateVector(string name, Vector3 position, Vector3 lookAt)
+    {
+        foreach(var v in mMarkerVectors)
+        {
+            if(v.mName == name)
+            {
+                v.mGameObject.transform.position = position;
+                v.mGameObject.transform.LookAt(position+lookAt);
+            }
+        }
+    }
+
     public void UpdateMarker(string name, Vector3 position)
     {
-        foreach(var m in mMarkers)
+        foreach (var m in mMarkers)
         {
-            if(m.mName == name){
+            if (m.mName == name)
+            {
                 m.mGameObject.transform.position = position;
             }
         }
