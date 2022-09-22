@@ -5,8 +5,9 @@ using UnityEngine;
 public class PlayerInput : MonoBehaviour
 {
     [SerializeField] private PlayerInputKeySetting keySetting;
-    private float mXAxis, mZAxis;
-    public float xAxis, zAxis;
+    private float mXAxis, mZAxis, mMouseX, mMouseY;
+    //------------------------------------------------------------//
+    public float xAxis, zAxis, mouseX, mouseY;
     public bool jump, running;
 
     private const float mSpeedInc = 0.02f;

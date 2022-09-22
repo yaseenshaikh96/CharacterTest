@@ -6,10 +6,12 @@ public class Player_Script : MonoBehaviour
 {
 
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private CameraContoller cameraContoller;
 
     void Start()
     {
         playerMovement.enabled = true;        
+        cameraContoller.enabled = true;
     }
 
 }
