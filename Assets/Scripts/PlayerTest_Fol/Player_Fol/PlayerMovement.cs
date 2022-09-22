@@ -6,13 +6,13 @@ public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private CharacterController characterController;
     [SerializeField] private PlayerInput playerInput;
+    [SerializeField] private LayerMask groundLayer;
 
     private PlayerState[] playerStates;
     private PlayerState currentPS;
     private PlayerStateE currentPSE;
     //-----------------------------------------//
-    private Vector3 oldPos, newPos;
-
+    Vector3 oldPos, newPos;
     void Start()
     {
         characterController.enabled = true;
@@ -28,7 +28,6 @@ public class PlayerMovement : MonoBehaviour
 
         currentPSE = PlayerStateE.idle;
         currentPS = playerStates[0];
-
     }
 
     void Update()
@@ -40,21 +39,24 @@ public class PlayerMovement : MonoBehaviour
         currentPSE = currentPS.Switch();
         currentPS = playerStates[(int)currentPSE];
 
-        Debug.Log(currentPS + ", " + currentPSE);
+        PlayerState.CalledEveryFrame();
+        // Debug.Log(currentPS + ", " + currentPSE);
 
     }
     //-------------------------------------------------------------------------------------------------------------------------------//
 
+    float movementSpeed;
+    const float maxMovementSpeed = 5;
+    const float movementSpeedInc = 0.5f;
     void Move()
     {
-        float speed = 0.1f;
         float xAxis = playerInput.xAxis;
         float zAxis = playerInput.zAxis;
-
         Vector3 playerDir = new Vector3(xAxis, 0, zAxis).normalized;
 
+        Debug.Log("movementSpeed: " + movementSpeed);
 
-        characterController.Move(playerDir * speed);
+        characterController.Move(playerDir * movementSpeed * Time.deltaTime);
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
@@ -67,24 +69,28 @@ public class PlayerMovement : MonoBehaviour
     }
     bool IsFallingSoft()
     {
-        return !characterController.isGrounded;
+        bool b = !characterController.isGrounded;
+        // Debug.Log("IsFalling: " + b);
+        return b;
     }
 
-    float hardFallDist = 0.05f;    
+    float hardFallDist = 0.05f;
     bool IsFallingHard()
     {
         return (oldPos.y - newPos.y) > hardFallDist;
     }
 
     float gravtiyVelo = 0;
-    const float gravityAcc = 0.3f;
-    const float terminalVelo = 3f;
+    const float gravityAcc = 10f;
+    const float terminalVelo = 40f;
     void ApplyGravity()
     {
-        gravtiyVelo += gravityAcc;
-        gravtiyVelo = Mathf.Clamp(gravtiyVelo, 0, terminalVelo);
+        Debug.Log(
+            "Velo: " + gravtiyVelo + ", " +
+            "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
+        );
 
-        characterController.Move(new Vector3(0, -gravtiyVelo, 0));
+        characterController.Move(new Vector3(0, -gravtiyVelo, 0) * Time.deltaTime);
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
@@ -98,12 +104,29 @@ public class PlayerMovement : MonoBehaviour
         public static CharacterController characterController;
         public abstract void Action();
         public abstract PlayerStateE Switch();
+
+        public static void CalledEveryFrame()
+        {
+
+            if (playerMovement.IsMoving())
+                playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, movementSpeedInc);
+            else
+                playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, -movementSpeedInc);
+
+            if (playerMovement.IsFallingSoft())
+                playerMovement.gravtiyVelo = playerMovement.playerInput.SmoothValue(
+                    playerMovement.gravtiyVelo, 0, PlayerMovement.terminalVelo, PlayerMovement.gravityAcc);
+            else
+                playerMovement.gravtiyVelo = 0;
+
+        }
+
     }
     private class PSIdle : PlayerState
     {
         public override void Action()
         {
-            if(playerMovement.IsFallingSoft())
+            if (playerMovement.IsFallingSoft())
                 playerMovement.ApplyGravity();
             // do nothing in idleV
         }
@@ -137,7 +160,7 @@ public class PlayerMovement : MonoBehaviour
         public override void Action()
         {
             playerMovement.Move();
-            if(playerMovement.IsFallingSoft())
+            if (playerMovement.IsFallingSoft())
                 playerMovement.ApplyGravity();
         }
         public override PlayerStateE Switch()

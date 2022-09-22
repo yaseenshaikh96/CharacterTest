@@ -10,38 +10,38 @@ public class PlayerInput : MonoBehaviour
     public float xAxis, zAxis, mouseX, mouseY;
     public bool jump, running;
 
-    private const float mSpeedInc = 0.02f;
-
     void Update()
     {
-        mXAxis = Input.GetAxisRaw("Horizontal");
-        mZAxis = Input.GetAxisRaw("Vertical");
-        xAxis = IncrementSpeed(xAxis, mXAxis);
-        zAxis = IncrementSpeed(zAxis, mZAxis);
+        xAxis = Input.GetAxisRaw("Horizontal");
+        zAxis = Input.GetAxisRaw("Vertical");
 
         jump = Input.GetKey(keySetting.jump);
         if (Input.GetKeyDown(keySetting.run))
             running = !running;
 
-        Debug.Log("mXaxis: " + mXAxis + ", xAxis: " + xAxis + " : mZaxis: " + mZAxis + ", zAxis: " + zAxis);
+        // Debug.Log("mXaxis: " + mXAxis + ", xAxis: " + xAxis + " : mZaxis: " + mZAxis + ", zAxis: " + zAxis);
     }
 
-
-    float IncrementSpeed(float value, float controlValue)
+    public float SmoothValue(float value, float min, float max, float increment)
     {
-        if(controlValue > 0)
-        {
-            value += mSpeedInc;
-        }
-        else if(controlValue < 0)
-        {
-            value -= mSpeedInc;
-        }else{
-            if(Mathf.Abs(value) < 0.05f)
-                return 0;
-            value -= 3 * mSpeedInc * Mathf.Sign(value);
-        }
-        return Mathf.Clamp(value, -1, 1);
+        value += increment;
+        return Mathf.Clamp(value, min, max);
     }
 
 }
+/*
+    float SmoothValue(float value, float controlValue)
+    {
+       mSpeedIncTimeAdj = mSpeedInc * Time.deltaTime;
+        
+        if(controlValue != 0){
+            value += mSpeedIncTimeAdj * Mathf.Sign(controlValue);
+        }
+        else{
+            if(Mathf.Abs(value) < 0.05f)
+                return 0;
+            value -= 3 * mSpeedIncTimeAdj * Mathf.Sign(value);
+        }
+        return Mathf.Clamp(value, -1, 1);
+    }
+*/
