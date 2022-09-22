@@ -737,7 +737,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &524504135
 GameObject:
   m_ObjectHideFlags: 0
@@ -877,6 +877,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterController: {fileID: 473744981}
+  playerInput: {fileID: 1580153743}
 --- !u!1 &626581158
 GameObject:
   m_ObjectHideFlags: 0
@@ -2055,7 +2056,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   keySetting: {fileID: 11400000, guid: 724a31693d358ec4bab06c1bac66f244, type: 2}
   xAxis: 0
-  yAxis: 0
+  zAxis: 0
   jump: 0
   running: 0
 --- !u!1 &1677294230

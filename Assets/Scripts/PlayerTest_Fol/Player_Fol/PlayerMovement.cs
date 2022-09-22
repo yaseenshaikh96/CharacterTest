@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private CharacterController characterController;
+    [SerializeField] private PlayerInput playerInput;
 
     void Start()
     {
@@ -14,13 +15,16 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float speed = 0.04f;
-        float hori = Input.GetAxis("Horizontal");
-        float vert = Input.GetAxis("Vertical");
+        float speed = 0.1f;
+        float xAxis = playerInput.xAxis;
+        float zAxis = playerInput.zAxis;
 
-        Vector3 playerDir = new Vector3(hori, 0, vert).normalized;
-        Debug.Log(playerDir);
+        Vector3 playerDir = new Vector3(xAxis, 0, zAxis).normalized;
 
-        characterController.Move(playerDir * speed);
+        if (characterController.isGrounded)
+            characterController.Move(playerDir * speed);
+        else
+            characterController.Move(Vector3.down * 0.04f);
+
     }
 }
