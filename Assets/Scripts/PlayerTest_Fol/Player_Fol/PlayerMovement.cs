@@ -43,6 +43,10 @@ public class PlayerMovement : MonoBehaviour
 
         PlayerState.CalledEveryFrame();
         // Debug.Log(currentPS + ", " + currentPSE);
+        Debug.Log(
+            "Velo: " + gravtiyVelo + ", " +
+            "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
+        );
 
     }
     //-------------------------------------------------------------------------------------------------------------------------------//
@@ -52,6 +56,7 @@ public class PlayerMovement : MonoBehaviour
     const float movementSpeedInc = 0.5f;
     void Move()
     {
+
         float xAxis = playerInput.xAxis;
         float zAxis = playerInput.zAxis;
         Vector3 playerForward = characterController.transform.forward;
@@ -60,6 +65,14 @@ public class PlayerMovement : MonoBehaviour
         newPlayerDir = newPlayerDir.normalized;
 
         characterController.Move(newPlayerDir * movementSpeed * Time.deltaTime);
+    }
+
+    const float jumpSpeed = 5f;
+
+    void Jump()
+    {
+        Vector3 jumpDir = Vector3.up * jumpSpeed;
+        characterController.Move(jumpDir * Time.deltaTime);
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
@@ -78,7 +91,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
-    
+
     Vector3 cameraOldPos = Vector3.zero;
     Vector3 cameraNewPos = Vector3.zero;
     bool IsCameraMoving()
@@ -93,9 +106,26 @@ public class PlayerMovement : MonoBehaviour
     }
     bool IsFallingSoft()
     {
-        bool b = !characterController.isGrounded;
-        // Debug.Log("IsFalling: " + b);
-        return b;
+        float quaterHeight = characterController.height / 4;
+        // Vector3 point1 = characterController.transform.TransformPoint(new Vector3(0, quaterHeight,0));
+        Vector3 point2 = characterController.transform.TransformPoint(new Vector3(0, 3 * quaterHeight,0));
+
+
+
+        RaycastHit raycastHit;
+
+        if(Physics.SphereCast(point2, characterController.radius, Vector3.down, out raycastHit, 5f, groundLayer))
+        // if(Physics.CapsuleCast(point1, point2, characterController.radius, Vector3.down, out raycastHit, 5f, groundLayer))
+        {
+           float diff =characterController.transform.position.y - raycastHit.point.y;
+            if(diff < 0.1f) {
+                return false;
+            }
+        }
+        return true;
+        // bool b = !characterController.isGrounded;
+        // // Debug.Log("IsFalling: " + b);
+        // return b;
     }
 
     float hardFallDist = 0.05f;
@@ -104,17 +134,22 @@ public class PlayerMovement : MonoBehaviour
         return (oldPos.y - newPos.y) > hardFallDist;
     }
 
-    float gravtiyVelo = 0;
-    const float gravityAcc = 10f;
+    bool IsJumping()
+    {
+        return playerInput.jump;
+    }
+
+    float gravtiyVelo = 1;
+    const float gravityAcc = 1f;
     const float terminalVelo = 40f;
     void ApplyGravity()
     {
-        // Debug.Log(
-        //     "Velo: " + gravtiyVelo + ", " +
-        //     "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
-        // );
 
         characterController.Move(new Vector3(0, -gravtiyVelo, 0) * Time.deltaTime);
+    }
+    void ResetGravity()
+    {
+        gravtiyVelo = 1;
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
@@ -133,8 +168,6 @@ public class PlayerMovement : MonoBehaviour
         {
             playerMovement.cameraOldPos = playerMovement.cameraNewPos;
             playerMovement.cameraNewPos = playerMovement.cameraMain.transform.position;
-            if(playerMovement.IsCameraMoving())
-                playerMovement.RotateFromCamera();
 
             if (playerMovement.IsMoving())
                 playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, movementSpeedInc);
@@ -163,6 +196,10 @@ public class PlayerMovement : MonoBehaviour
 
             if (playerMovement.IsFallingHard())
                 return PlayerStateE.falling;
+
+            if (playerMovement.IsJumping())
+                return PlayerStateE.jumping;
+
             if (playerMovement.IsMoving())
                 return PlayerStateE.walking;
             return PlayerStateE.idle;
@@ -187,7 +224,11 @@ public class PlayerMovement : MonoBehaviour
     {
         public override void Action()
         {
+            if (playerMovement.IsCameraMoving())
+                playerMovement.RotateFromCamera();
+
             playerMovement.Move();
+
             if (playerMovement.IsFallingSoft())
                 playerMovement.ApplyGravity();
         }
@@ -213,13 +254,37 @@ public class PlayerMovement : MonoBehaviour
     }
     private class PSJumping : PlayerState
     {
+        bool isCurrentlyJumping = false;
+        float currentAirTime = 0;
+        const float maxAirTime = 1; //sec
         public override void Action()
         {
-
+            playerMovement.ResetGravity();
+            isCurrentlyJumping = true;
+            currentAirTime += Time.deltaTime;
+            if (currentAirTime < maxAirTime)
+            {
+                playerMovement.Jump();
+            }
+            else
+            {
+                isCurrentlyJumping = false;
+            }
         }
         public override PlayerStateE Switch()
         {
+            if (playerMovement.IsFallingHard() || !isCurrentlyJumping)
+            {
+                Reset();
+                return PlayerStateE.falling;
+            }
+
             return PlayerStateE.jumping;
+        }
+        void Reset()
+        {
+            currentAirTime = 0;
+            isCurrentlyJumping = false;
         }
     }
 }
