@@ -7,6 +7,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Camera cameraMain;
 
     private PlayerState[] playerStates;
     private PlayerState currentPS;
@@ -25,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
         playerStates[1] = new PSFalling();
         playerStates[2] = new PSWalking();
         playerStates[3] = new PSRunning();
+        playerStates[4] = new PSJumping();
 
         currentPSE = PlayerStateE.idle;
         currentPS = playerStates[0];
@@ -45,22 +47,44 @@ public class PlayerMovement : MonoBehaviour
     }
     //-------------------------------------------------------------------------------------------------------------------------------//
 
-    float movementSpeed;
+    float movementSpeed = 0;
     const float maxMovementSpeed = 5;
     const float movementSpeedInc = 0.5f;
     void Move()
     {
         float xAxis = playerInput.xAxis;
         float zAxis = playerInput.zAxis;
-        Vector3 playerDir = new Vector3(xAxis, 0, zAxis).normalized;
+        Vector3 playerForward = characterController.transform.forward;
+        Vector3 playerSideway = characterController.transform.right;
+        Vector3 newPlayerDir = (playerForward * zAxis) + (playerSideway * xAxis);
+        newPlayerDir = newPlayerDir.normalized;
 
-        Debug.Log("movementSpeed: " + movementSpeed);
-
-        characterController.Move(playerDir * movementSpeed * Time.deltaTime);
+        characterController.Move(newPlayerDir * movementSpeed * Time.deltaTime);
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
 
+    float rotSpeed = 20;
+    void RotateFromCamera()
+    {
+        Transform playerT = characterController.transform;
+        Vector3 playerRot = characterController.transform.rotation.eulerAngles;
+        Vector3 cameraRot = cameraMain.transform.rotation.eulerAngles;
+
+        Quaternion newRot = Quaternion.Euler(playerRot.x, cameraRot.y, playerRot.z);
+
+        playerT.rotation = Quaternion.Slerp(playerT.rotation, newRot, rotSpeed * Time.deltaTime);
+
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------//
+    
+    Vector3 cameraOldPos = Vector3.zero;
+    Vector3 cameraNewPos = Vector3.zero;
+    bool IsCameraMoving()
+    {
+        return cameraNewPos != cameraOldPos;
+    }
     bool IsMoving()
     {
         if (playerInput.xAxis != 0 || playerInput.zAxis != 0)
@@ -85,10 +109,10 @@ public class PlayerMovement : MonoBehaviour
     const float terminalVelo = 40f;
     void ApplyGravity()
     {
-        Debug.Log(
-            "Velo: " + gravtiyVelo + ", " +
-            "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
-        );
+        // Debug.Log(
+        //     "Velo: " + gravtiyVelo + ", " +
+        //     "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
+        // );
 
         characterController.Move(new Vector3(0, -gravtiyVelo, 0) * Time.deltaTime);
     }
@@ -107,6 +131,10 @@ public class PlayerMovement : MonoBehaviour
 
         public static void CalledEveryFrame()
         {
+            playerMovement.cameraOldPos = playerMovement.cameraNewPos;
+            playerMovement.cameraNewPos = playerMovement.cameraMain.transform.position;
+            if(playerMovement.IsCameraMoving())
+                playerMovement.RotateFromCamera();
 
             if (playerMovement.IsMoving())
                 playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, movementSpeedInc);
@@ -181,6 +209,17 @@ public class PlayerMovement : MonoBehaviour
         public override PlayerStateE Switch()
         {
             return PlayerStateE.running;
+        }
+    }
+    private class PSJumping : PlayerState
+    {
+        public override void Action()
+        {
+
+        }
+        public override PlayerStateE Switch()
+        {
+            return PlayerStateE.jumping;
         }
     }
 }
