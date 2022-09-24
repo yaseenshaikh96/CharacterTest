@@ -9,52 +9,35 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Camera cameraMain;
 
-    private PlayerState[] playerStates;
-    private PlayerState currentPS;
-    private PlayerStateE currentPSE;
+    //--------------------------------------------------------------------------------------------//
+
     //-----------------------------------------//
-    Vector3 oldPos, newPos;
     void Start()
     {
         characterController.enabled = true;
-
-        PlayerState.playerMovement = this;
-        PlayerState.characterController = characterController;
-
-        playerStates = new PlayerState[10];
-        playerStates[0] = new PSIdle();
-        playerStates[1] = new PSFalling();
-        playerStates[2] = new PSWalking();
-        playerStates[3] = new PSRunning();
-        playerStates[4] = new PSJumping();
-
-        currentPSE = PlayerStateE.idle;
-        currentPS = playerStates[0];
+        PlayerState.Init(this, characterController);
     }
 
     void Update()
     {
-        oldPos = newPos;
-        newPos = characterController.transform.position;
-
-        currentPS.Action();
-        currentPSE = currentPS.Switch();
-        currentPS = playerStates[(int)currentPSE];
-
-        PlayerState.CalledEveryFrame();
-        // Debug.Log(currentPS + ", " + currentPSE);
-        Debug.Log(
-            "Velo: " + gravtiyVelo + ", " +
-            "TimeAdj: " + (-gravtiyVelo * Time.deltaTime)
-        );
-
+        PlayerState.Update();
+        UpdateVariables();
     }
+
     //-------------------------------------------------------------------------------------------------------------------------------//
 
-    float movementSpeed = 0;
-    const float maxMovementSpeed = 5;
-    const float movementSpeedInc = 0.5f;
-    void Move()
+    void UpdateVariables()
+    {
+        oldPos = newPos;
+        newPos = characterController.transform.position;
+        cameraOldPos = cameraNewPos;
+        cameraNewPos = cameraMain.transform.position;
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------//
+
+
+    void Move(float magnitude)
     {
 
         float xAxis = playerInput.xAxis;
@@ -64,7 +47,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 newPlayerDir = (playerForward * zAxis) + (playerSideway * xAxis);
         newPlayerDir = newPlayerDir.normalized;
 
-        characterController.Move(newPlayerDir * movementSpeed * Time.deltaTime);
+        characterController.Move(newPlayerDir * magnitude);
     }
 
     const float jumpSpeed = 5f;
@@ -92,13 +75,12 @@ public class PlayerMovement : MonoBehaviour
 
     //--------------------------------------------------------------------------------------------------------------------------//
 
-    Vector3 cameraOldPos = Vector3.zero;
-    Vector3 cameraNewPos = Vector3.zero;
+    Vector3 cameraOldPos, cameraNewPos;
     bool IsCameraMoving()
     {
         return cameraNewPos != cameraOldPos;
     }
-    bool IsMoving()
+    bool IsTryingMoving()
     {
         if (playerInput.xAxis != 0 || playerInput.zAxis != 0)
             return true;
@@ -107,184 +89,180 @@ public class PlayerMovement : MonoBehaviour
     bool IsFallingSoft()
     {
         float quaterHeight = characterController.height / 4;
-        // Vector3 point1 = characterController.transform.TransformPoint(new Vector3(0, quaterHeight,0));
-        Vector3 point2 = characterController.transform.TransformPoint(new Vector3(0, 3 * quaterHeight,0));
-
-
+        Vector3 point2 = characterController.transform.TransformPoint(new Vector3(0, 3 * quaterHeight, 0));
 
         RaycastHit raycastHit;
-
-        if(Physics.SphereCast(point2, characterController.radius, Vector3.down, out raycastHit, 5f, groundLayer))
-        // if(Physics.CapsuleCast(point1, point2, characterController.radius, Vector3.down, out raycastHit, 5f, groundLayer))
+        if (Physics.SphereCast(point2, characterController.radius, Vector3.down, out raycastHit, 5f, groundLayer))
         {
-           float diff =characterController.transform.position.y - raycastHit.point.y;
-            if(diff < 0.1f) {
+            float diff = characterController.transform.position.y - raycastHit.point.y;
+            if (diff < 0.1f)
+            {
                 return false;
             }
         }
         return true;
-        // bool b = !characterController.isGrounded;
-        // // Debug.Log("IsFalling: " + b);
-        // return b;
     }
 
-    float hardFallDist = 0.05f;
+    Vector3 oldPos, newPos;
     bool IsFallingHard()
     {
-        return (oldPos.y - newPos.y) > hardFallDist;
+        return false;
     }
 
     bool IsJumping()
     {
-        return playerInput.jump;
+        return false;
     }
 
-    float gravtiyVelo = 1;
-    const float gravityAcc = 1f;
-    const float terminalVelo = 40f;
     void ApplyGravity()
     {
 
-        characterController.Move(new Vector3(0, -gravtiyVelo, 0) * Time.deltaTime);
-    }
-    void ResetGravity()
-    {
-        gravtiyVelo = 1;
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
     private enum PlayerStateE
     {
-        idle, falling, walking, running, jumping
+        idle, walking, falling, jumping
     }
     private abstract class PlayerState
     {
-        public static PlayerMovement playerMovement;
-        public static CharacterController characterController;
-        public abstract void Action();
-        public abstract PlayerStateE Switch();
+        public static PlayerMovement playerMovement { get; private set; }
+        private static CharacterController characterController;
+        private static PlayerState[] playerStates;
+        public static PlayerState currentPlayerState { get; private set; }
 
-        public static void CalledEveryFrame()
+        public static void Init(PlayerMovement pm, CharacterController cc)
         {
-            playerMovement.cameraOldPos = playerMovement.cameraNewPos;
-            playerMovement.cameraNewPos = playerMovement.cameraMain.transform.position;
+            playerMovement = pm;
+            characterController = cc;
 
-            if (playerMovement.IsMoving())
-                playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, movementSpeedInc);
-            else
-                playerMovement.movementSpeed = playerMovement.playerInput.SmoothValue(playerMovement.movementSpeed, 0, maxMovementSpeed, -movementSpeedInc);
+            playerStates = new PlayerState[10];
+            playerStates[0] = new PSIdle();
+            playerStates[1] = new PSWalking();
+            playerStates[2] = new PSFalling();
+            playerStates[3] = new PSJumping();
 
-            if (playerMovement.IsFallingSoft())
-                playerMovement.gravtiyVelo = playerMovement.playerInput.SmoothValue(
-                    playerMovement.gravtiyVelo, 0, PlayerMovement.terminalVelo, PlayerMovement.gravityAcc);
-            else
-                playerMovement.gravtiyVelo = 0;
 
+            currentPlayerState = playerStates[0];
+        }
+        public static void Update()
+        {
+            currentPlayerState.Action();
+            currentPlayerState.CheckForSwitch();
+        }
+        protected void SwitchState(PlayerStateE newState)
+        {
+            currentPlayerState.Terminate();
+            currentPlayerState = playerStates[(int)newState];
+            currentPlayerState.Initialize();
         }
 
+        public abstract void Action();
+        public abstract void CheckForSwitch();
+        public abstract void Initialize();
+        public abstract void Terminate();
+
+
     }
+
+
     private class PSIdle : PlayerState
     {
         public override void Action()
         {
-            if (playerMovement.IsFallingSoft())
-                playerMovement.ApplyGravity();
-            // do nothing in idleV
         }
-        public override PlayerStateE Switch()
+        public override void Initialize()
+        { }
+        public override void Terminate()
+        { }
+        public override void CheckForSwitch()
         {
+            if (playerMovement.IsTryingMoving())
+                SwitchState(PlayerStateE.walking);
 
-            if (playerMovement.IsFallingHard())
-                return PlayerStateE.falling;
-
-            if (playerMovement.IsJumping())
-                return PlayerStateE.jumping;
-
-            if (playerMovement.IsMoving())
-                return PlayerStateE.walking;
-            return PlayerStateE.idle;
         }
     }
-    private class PSFalling : PlayerState
-    {
-        public override void Action()
-        {
-            playerMovement.ApplyGravity();
-        }
-        public override PlayerStateE Switch()
-        {
-            if (playerMovement.IsFallingHard())
-                return PlayerStateE.falling;
-            if (playerMovement.IsMoving())
-                return PlayerStateE.walking;
-            return PlayerStateE.idle;
-        }
-    }
+
     private class PSWalking : PlayerState
-    {
+    {/*
+        5 m / s
+       1 s = 1000 ms
+        if 60fps
+            then 1 / 60 = 16.6ms
+        if 30 fps
+            then 1 / 30 = 33.3ms
+        
+        speed per ms = 5 / 1000 = 0.005 meters in one ms
+        60 fps || 30 fps = speed per ms * time of frame
+
+    */
+        private const float maxSpeed = 100f / 1000; // magnitude if  1ms, 1fps
+        private float currentSpeed = 0;
+        private const float speedInc = maxSpeed; // speedInc over one second
+        bool isMoving = false;
+
         public override void Action()
         {
             if (playerMovement.IsCameraMoving())
                 playerMovement.RotateFromCamera();
 
-            playerMovement.Move();
+            if (playerMovement.IsTryingMoving())
+                currentSpeed += speedInc * Time.deltaTime;
+            else
+                currentSpeed -= speedInc * Time.deltaTime;
 
-            if (playerMovement.IsFallingSoft())
-                playerMovement.ApplyGravity();
+            currentSpeed = Mathf.Clamp(currentSpeed, 0, maxSpeed);
+
+            if (currentSpeed == 0)
+            {
+                isMoving = false;
+                return;
+            }
+            Debug.Log("maxspeed: " + maxSpeed + ", inc: " + speedInc * Time.deltaTime + ", current: " + currentSpeed);
+            playerMovement.Move(currentSpeed);
         }
-        public override PlayerStateE Switch()
+        public override void Initialize()
+        {
+            isMoving = true;
+        }
+        public override void Terminate()
+        {
+            currentSpeed = 0;
+        }
+        public override void CheckForSwitch()
         {
             if (playerMovement.IsFallingHard())
-                return PlayerStateE.falling;
-            if (playerMovement.IsMoving())
-                return PlayerStateE.walking;
-            return PlayerStateE.idle;
+                SwitchState(PlayerStateE.falling);
+            if (!isMoving)
+                SwitchState(PlayerStateE.idle);
         }
     }
-    private class PSRunning : PlayerState
+
+    private class PSFalling : PlayerState
     {
         public override void Action()
         {
-
         }
-        public override PlayerStateE Switch()
+        public override void Initialize()
+        { }
+        public override void Terminate()
+        { }
+        public override void CheckForSwitch()
         {
-            return PlayerStateE.running;
         }
     }
+
     private class PSJumping : PlayerState
     {
-        bool isCurrentlyJumping = false;
-        float currentAirTime = 0;
-        const float maxAirTime = 1; //sec
         public override void Action()
         {
-            playerMovement.ResetGravity();
-            isCurrentlyJumping = true;
-            currentAirTime += Time.deltaTime;
-            if (currentAirTime < maxAirTime)
-            {
-                playerMovement.Jump();
-            }
-            else
-            {
-                isCurrentlyJumping = false;
-            }
         }
-        public override PlayerStateE Switch()
+        public override void Initialize()
+        { }
+        public override void Terminate()
+        { }
+        public override void CheckForSwitch()
         {
-            if (playerMovement.IsFallingHard() || !isCurrentlyJumping)
-            {
-                Reset();
-                return PlayerStateE.falling;
-            }
-
-            return PlayerStateE.jumping;
-        }
-        void Reset()
-        {
-            currentAirTime = 0;
-            isCurrentlyJumping = false;
         }
     }
 }
