@@ -20,8 +20,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        PlayerState.Update();
         UpdateVariables();
+        PlayerState.Update();
     }
 
     //-------------------------------------------------------------------------------------------------------------------------------//
@@ -32,11 +32,12 @@ public class PlayerMovement : MonoBehaviour
         newPos = characterController.transform.position;
         cameraOldPos = cameraNewPos;
         cameraNewPos = cameraMain.transform.position;
+
     }
 
     //-------------------------------------------------------------------------------------------------------------------------------//
 
-
+    Vector3 previousDirOfMotion;
     void Move(float magnitude)
     {
 
@@ -44,14 +45,26 @@ public class PlayerMovement : MonoBehaviour
         float zAxis = playerInput.zAxis;
         Vector3 playerForward = characterController.transform.forward;
         Vector3 playerSideway = characterController.transform.right;
-        Vector3 newPlayerDir = (playerForward * zAxis) + (playerSideway * xAxis);
+
+        Vector3 newPlayerDir;
+        if (xAxis == 0 && zAxis == 0)
+            newPlayerDir = previousDirOfMotion;
+        else
+            newPlayerDir = (playerForward * zAxis) + (playerSideway * xAxis);
         newPlayerDir = newPlayerDir.normalized;
+
+        previousDirOfMotion = newPlayerDir;
+
+            // if d then camera.right
+            //if a then camera.left
+
+        if (IsCameraMoving()) 
+            RotateFromCamera();
 
         characterController.Move(newPlayerDir * magnitude);
     }
 
     const float jumpSpeed = 5f;
-
     void Jump()
     {
         Vector3 jumpDir = Vector3.up * jumpSpeed;
@@ -72,13 +85,21 @@ public class PlayerMovement : MonoBehaviour
         playerT.rotation = Quaternion.Slerp(playerT.rotation, newRot, rotSpeed * Time.deltaTime);
 
     }
+    void RotateWhenMovingSideWays(Vector3 dirOfMotion)
+    {
+        Quaternion dirOfMotionQuat = Quaternion.Euler(dirOfMotion);
+        Transform playerT = characterController.transform;
+        Quaternion newRot = Quaternion.Slerp(playerT.rotation, dirOfMotionQuat, rotSpeed * Time.deltaTime);
+        playerT.rotation = newRot;
+    }
 
     //--------------------------------------------------------------------------------------------------------------------------//
 
     Vector3 cameraOldPos, cameraNewPos;
     bool IsCameraMoving()
     {
-        return cameraNewPos != cameraOldPos;
+        return cameraOldPos != cameraNewPos;
+        // return cameraOldRot != cameraNewRot;
     }
     bool IsTryingMoving()
     {
@@ -149,6 +170,7 @@ public class PlayerMovement : MonoBehaviour
         {
             currentPlayerState.Action();
             currentPlayerState.CheckForSwitch();
+            // Debug.Log("state: " + currentPlayerState);
         }
         protected void SwitchState(PlayerStateE newState)
         {
@@ -196,30 +218,36 @@ public class PlayerMovement : MonoBehaviour
         60 fps || 30 fps = speed per ms * time of frame
 
     */
-        private const float maxSpeed = 100f / 1000; // magnitude if  1ms, 1fps
-        private float currentSpeed = 0;
-        private const float speedInc = maxSpeed; // speedInc over one second
+        private const float maxSpeed = 10f; // 10 m/s
         bool isMoving = false;
+        private float speedFactor = 0;
+        private float speedFactorTimeAdj = 0;
+        private const float timeTillMaxSpeed = 2; // sec
 
         public override void Action()
         {
-            if (playerMovement.IsCameraMoving())
-                playerMovement.RotateFromCamera();
+
+            // if (playerMovement.IsCameraMoving())
+            //     playerMovement.RotateFromCamera();
 
             if (playerMovement.IsTryingMoving())
-                currentSpeed += speedInc * Time.deltaTime;
+            {
+                speedFactor += Time.deltaTime;
+            }
             else
-                currentSpeed -= speedInc * Time.deltaTime;
+                speedFactor -= Time.deltaTime;
 
-            currentSpeed = Mathf.Clamp(currentSpeed, 0, maxSpeed);
+            speedFactor = Mathf.Clamp(speedFactor, 0, timeTillMaxSpeed);
+            speedFactorTimeAdj = Remap(speedFactor, 0, timeTillMaxSpeed, 0, 1);
 
-            if (currentSpeed == 0)
+            if (speedFactorTimeAdj == 0)
             {
                 isMoving = false;
                 return;
             }
-            Debug.Log("maxspeed: " + maxSpeed + ", inc: " + speedInc * Time.deltaTime + ", current: " + currentSpeed);
-            playerMovement.Move(currentSpeed);
+
+            // Debug.Log("maxspeed: " + maxSpeed + ", actual: " + maxSpeed * speedFactor * Time.deltaTime + ", speedFactor: " + speedFactor);
+            playerMovement.Move(maxSpeed * speedFactorTimeAdj * Time.deltaTime);
         }
         public override void Initialize()
         {
@@ -227,14 +255,19 @@ public class PlayerMovement : MonoBehaviour
         }
         public override void Terminate()
         {
-            currentSpeed = 0;
+            speedFactor = 0;
+            speedFactorTimeAdj = 0;
         }
         public override void CheckForSwitch()
         {
-            if (playerMovement.IsFallingHard())
-                SwitchState(PlayerStateE.falling);
+            // if (playerMovement.IsFallingHard())
+            //     SwitchState(PlayerStateE.falling);
             if (!isMoving)
                 SwitchState(PlayerStateE.idle);
+        }
+        float Remap(float source, float sourceFrom, float sourceTo, float targetFrom, float targetTo)
+        {
+            return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);
         }
     }
 
