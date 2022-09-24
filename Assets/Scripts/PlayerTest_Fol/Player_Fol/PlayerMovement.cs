@@ -43,8 +43,11 @@ public class PlayerMovement : MonoBehaviour
 
         float xAxis = playerInput.xAxis;
         float zAxis = playerInput.zAxis;
-        Vector3 playerForward = characterController.transform.forward;
-        Vector3 playerSideway = characterController.transform.right;
+
+        Vector3 cameraForward = cameraMain.transform.forward;
+        Vector3 cameraRight = cameraMain.transform.right;
+        Vector3 playerForward = (new Vector3(cameraForward.x, 0,cameraForward.z)).normalized;
+        Vector3 playerSideway = (new Vector3(cameraRight.x, 0,cameraRight.z)).normalized;
 
         Vector3 newPlayerDir;
         if (xAxis == 0 && zAxis == 0)
@@ -58,9 +61,9 @@ public class PlayerMovement : MonoBehaviour
             // if d then camera.right
             //if a then camera.left
 
-        if (IsCameraMoving()) 
-            RotateFromCamera();
-
+        // if (IsCameraMoving()) 
+        //     RotateFromCamera();
+        RotateInDirOfMotion(newPlayerDir);
         characterController.Move(newPlayerDir * magnitude);
     }
 
@@ -85,14 +88,21 @@ public class PlayerMovement : MonoBehaviour
         playerT.rotation = Quaternion.Slerp(playerT.rotation, newRot, rotSpeed * Time.deltaTime);
 
     }
-    void RotateWhenMovingSideWays(Vector3 dirOfMotion)
+    void RotateInDirOfMotion(Vector3 dirOfMotion)
     {
-        Quaternion dirOfMotionQuat = Quaternion.Euler(dirOfMotion);
         Transform playerT = characterController.transform;
-        Quaternion newRot = Quaternion.Slerp(playerT.rotation, dirOfMotionQuat, rotSpeed * Time.deltaTime);
-        playerT.rotation = newRot;
-    }
+        // Quaternion dirOfMotionQuat = Quaternion.Euler(dirOfMotion);
 
+        // float angleY = Vector3.Angle(playerT.forward, dirOfMotion);
+        // Debug.Log("Angle: " + angleY);
+
+        Quaternion newRot = new Quaternion();
+        newRot.SetLookRotation(dirOfMotion);
+
+        // playerT.LookAt(playerT.transform.position + dirOfMotion);
+    
+        playerT.rotation = Quaternion.Slerp(playerT.rotation, newRot, rotSpeed * Time.deltaTime);
+    }
     //--------------------------------------------------------------------------------------------------------------------------//
 
     Vector3 cameraOldPos, cameraNewPos;
@@ -222,7 +232,7 @@ public class PlayerMovement : MonoBehaviour
         bool isMoving = false;
         private float speedFactor = 0;
         private float speedFactorTimeAdj = 0;
-        private const float timeTillMaxSpeed = 2; // sec
+        private const float timeTillMaxSpeed = 1; // sec
 
         public override void Action()
         {
@@ -235,7 +245,7 @@ public class PlayerMovement : MonoBehaviour
                 speedFactor += Time.deltaTime;
             }
             else
-                speedFactor -= Time.deltaTime;
+                speedFactor -= 5 * Time.deltaTime;
 
             speedFactor = Mathf.Clamp(speedFactor, 0, timeTillMaxSpeed);
             speedFactorTimeAdj = Remap(speedFactor, 0, timeTillMaxSpeed, 0, 1);
