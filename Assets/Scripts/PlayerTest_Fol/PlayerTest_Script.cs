@@ -14,6 +14,9 @@ public class PlayerTest_Script : MonoBehaviour
 
     void Start()
     {
+        QualitySettings.vSyncCount = 1;
+        // Application.targetFrameRate = 30;
+
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
