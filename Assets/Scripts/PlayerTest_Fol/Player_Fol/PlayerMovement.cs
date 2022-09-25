@@ -64,9 +64,18 @@ public class PlayerMovement : MonoBehaviour
         characterController.Move(newPlayerDir * magnitude);
     }
 
-    void Jump()
+    const float jumpSpeed = 20f;
+    void Jump(Vector3 playerDirWhenfirstJumped, float t)
     {
-        
+        Vector3 jumpDir = new Vector3(playerDirWhenfirstJumped.x, 0.9f, playerDirWhenfirstJumped.z);
+        jumpDir = jumpDir.normalized;
+
+        characterController.Move(jumpDir * jumpSpeed * Time.deltaTime * GiveCurrentJumpPower(t));
+
+        float GiveCurrentJumpPower(float t)
+        {
+            return 4 * (-(t * t) + t);
+        }
     }
 
     //--------------------------------------------------------------------------------------------------------------------------//
@@ -87,6 +96,14 @@ public class PlayerMovement : MonoBehaviour
         if (playerInput.xAxis != 0 || playerInput.zAxis != 0)
             return true;
         return false;
+    }
+    bool IsTryingJumping()
+    {
+        return playerInput.jump;
+    }
+    bool IsTryingRunning()
+    {
+         return IsTryingMoving() && playerInput.running;
     }
 
 
@@ -113,28 +130,39 @@ public class PlayerMovement : MonoBehaviour
         return GroundCheck(1f);
     }
     //--------------------------------------------------------------------------------------------------------------------------//
-    float gravityVelo;
-    const float terminalVelo = 40f;
-    const float gravityAcc = terminalVelo / 120; //denominator frames for terminal
+
+    TimeVariant gravity = new TimeVariant(0, 40, 2);
     void ApplyGravity()
     {
-        gravityVelo += gravityAcc;
-        gravityVelo = Mathf.Clamp(gravityVelo, 0, terminalVelo);
-        characterController.Move(new Vector3(0, -gravityVelo, 0) * Time.deltaTime);
+        gravity.Increment(1);
+        gravity.Update();
+        characterController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
     }
     void ResetGravity()
     {
-        gravityVelo = 0;
+        gravity.Reset();
+    }
+    void CheckAndApplyGravity()
+    {
+        if (IsFallingSoft())
+            ApplyGravity();
+        else
+            ResetGravity();
+    }
+    //--------------------------------------------------------------------------------------------------------------------------//
+    float Remap(float source, float sourceFrom, float sourceTo, float targetFrom, float targetTo)
+    {
+        return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);
     }
     //--------------------------------------------------------------------------------------------------------------------------//
     private enum PlayerStateE
     {
-        idle, walking, falling, fallRecovery, jumping
+        idle, walking, running,falling, fallRecovery, jumping
     }
     private abstract class PlayerState
     {
         public static PlayerMovement playerMovement { get; private set; }
-        private static CharacterController characterController;
+        public static CharacterController characterController { get; private set; }
         private static PlayerState[] playerStates;
         public static PlayerState currentPlayerState { get; private set; }
 
@@ -146,9 +174,10 @@ public class PlayerMovement : MonoBehaviour
             playerStates = new PlayerState[10];
             playerStates[0] = new PSIdle();
             playerStates[1] = new PSWalking();
-            playerStates[2] = new PSFalling();
-            playerStates[3] = new PSFallRecovery();
-            playerStates[4] = new PSJumping();
+            playerStates[2] = new PSRunning();
+            playerStates[3] = new PSFalling();
+            playerStates[4] = new PSFallRecovery();
+            playerStates[5] = new PSJumping();
 
 
             currentPlayerState = playerStates[0];
@@ -190,6 +219,8 @@ public class PlayerMovement : MonoBehaviour
         {
             if (playerMovement.IsFallingHard())
                 SwitchState(PlayerStateE.falling);
+            if (playerMovement.IsTryingJumping())
+                SwitchState(PlayerStateE.jumping);
             if (playerMovement.IsTryingMoving())
                 SwitchState(PlayerStateE.walking);
 
@@ -198,28 +229,28 @@ public class PlayerMovement : MonoBehaviour
 
     private class PSWalking : PlayerState
     {
-        private const float maxSpeed = 10f; // 10 m/s
         bool isMoving = false;
-        private float speedFactor = 0;
-        private float speedFactorTimeAdj = 0;
-        private const float timeTillMaxSpeed = 1; // sec
-
+        bool skippingReset = false;
+        TimeVariant speed;
+        public PSWalking()
+        {
+            speed = new TimeVariant(0, 10, 2);
+        }
         public override void Action()
         {
             if (playerMovement.IsTryingMoving())
-                speedFactor += Time.deltaTime;
+                speed.Increment(1);
             else
-                speedFactor -= 5 * Time.deltaTime;
+                speed.Decrement(5);
 
-            speedFactor = Mathf.Clamp(speedFactor, 0, timeTillMaxSpeed);
-            speedFactorTimeAdj = Remap(speedFactor, 0, timeTillMaxSpeed, 0, 1);
+            speed.Update();
 
-            if (speedFactorTimeAdj == 0)
+            if (speed.multipleFactorNormalized == 0)
             {
                 isMoving = false;
                 return;
             }
-            playerMovement.Move(maxSpeed * speedFactorTimeAdj * Time.deltaTime);
+            playerMovement.Move(speed.currentValue * Time.deltaTime);
         }
         public override void Initialize()
         {
@@ -227,19 +258,77 @@ public class PlayerMovement : MonoBehaviour
         }
         public override void Terminate()
         {
-            speedFactor = 0;
-            speedFactorTimeAdj = 0;
+            if (!skippingReset)
+                speed.Reset();
+            skippingReset = false;
         }
         public override void CheckForSwitch()
         {
             if (playerMovement.IsFallingHard())
                 SwitchState(PlayerStateE.falling);
+            if (playerMovement.IsTryingJumping())
+            {
+                skippingReset = true;
+                SwitchState(PlayerStateE.jumping);
+            }
+            if(playerMovement.IsTryingRunning())
+            {
+                skippingReset= true;
+                SwitchState(PlayerStateE.running);
+            }
             if (!isMoving)
                 SwitchState(PlayerStateE.idle);
         }
-        float Remap(float source, float sourceFrom, float sourceTo, float targetFrom, float targetTo)
+    }
+
+    private class PSRunning : PlayerState
+    {
+        bool isRunning = false;
+        bool skippingReset = false;
+        TimeVariant speed;
+        public PSRunning()
         {
-            return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);
+            speed = new TimeVariant(10, 20, 2);
+        }
+        public override void Action()
+        {
+            if (playerMovement.IsTryingRunning())
+                speed.Increment(1);
+            else
+                speed.Decrement(5);
+
+            speed.Update();
+
+            if (speed.multipleFactorNormalized == 0)
+            {
+                isRunning = false;
+                return;
+            }
+            playerMovement.Move(speed.currentValue * Time.deltaTime);
+        }
+        public override void Initialize()
+        {
+            isRunning = true;
+        }
+        public override void Terminate()
+        {
+            if (!skippingReset)
+                speed.Reset();
+            skippingReset = false;
+        }
+        public override void CheckForSwitch()
+        {
+            if(playerMovement.IsFallingHard())
+                SwitchState(PlayerStateE.falling);
+
+            if(playerMovement.IsTryingJumping())
+            {
+                skippingReset = true;
+                SwitchState(PlayerStateE.jumping);
+            }
+
+            if(!isRunning)
+                SwitchState(PlayerStateE.walking);
         }
     }
 
@@ -248,6 +337,7 @@ public class PlayerMovement : MonoBehaviour
         const float timeSinceFallingToGoToRecovery = 1f;
         float timeSinceStart = 0;
         bool isGoingToRevocery = false;
+
         public override void Action()
         {
             timeSinceStart += Time.deltaTime;
@@ -300,6 +390,44 @@ public class PlayerMovement : MonoBehaviour
     }
     private class PSJumping : PlayerState
     {
+        TimeVariant jump;
+        bool isJumpOver = false;
+        Vector3 playerDirWhenJumpStart;
+
+        public PSJumping()
+        {
+            jump = new TimeVariant(0, 1, 1);
+        }
+        public override void Action()
+        {
+            Debug.Log("In Jump");
+            jump.Increment(1);
+            jump.Update();
+
+            playerMovement.Jump(playerDirWhenJumpStart, jump.currentValue);
+
+            if (jump.currentValue == 1)
+                isJumpOver = true;
+        }
+        public override void Initialize()
+        {
+            playerDirWhenJumpStart = characterController.transform.forward;
+        }
+        public override void Terminate()
+        {
+            jump.Reset();
+            isJumpOver = false;
+        }
+        public override void CheckForSwitch()
+        {
+            if (isJumpOver)
+                SwitchState(PlayerStateE.idle);
+        }
+    }
+}
+/*
+    private class PSJumping : PlayerState
+    {
         public override void Action()
         {
         }
@@ -311,4 +439,4 @@ public class PlayerMovement : MonoBehaviour
         {
         }
     }
-}
+*/

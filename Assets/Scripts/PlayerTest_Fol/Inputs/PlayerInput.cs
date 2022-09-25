@@ -5,29 +5,17 @@ using UnityEngine;
 public class PlayerInput : MonoBehaviour
 {
     [SerializeField] private PlayerInputKeySetting keySetting;
-    private float mXAxis, mZAxis, mMouseX, mMouseY;
     //------------------------------------------------------------//
-    public float xAxis, zAxis, mouseX, mouseY;
+    public float xAxis, zAxis;
     public bool jump, running;
 
     void Update()
     {
         xAxis = Input.GetAxisRaw("Horizontal");
         zAxis = Input.GetAxisRaw("Vertical");
-
-        jump = Input.GetKey(keySetting.jump);
-        if (Input.GetKeyDown(keySetting.run))
-            running = !running;
-
-        // Debug.Log("mXaxis: " + mXAxis + ", xAxis: " + xAxis + " : mZaxis: " + mZAxis + ", zAxis: " + zAxis);
+        jump = Input.GetKeyDown(keySetting.jump);
+        running = Input.GetKey(keySetting.run);
     }
-
-    public float SmoothValue(float value, float min, float max, float increment)
-    {
-        value += increment;
-        return Mathf.Clamp(value, min, max);
-    }
-
 }
 /*
     float SmoothValue(float value, float controlValue)

@@ -2625,8 +2625,6 @@ MonoBehaviour:
   keySetting: {fileID: 11400000, guid: 724a31693d358ec4bab06c1bac66f244, type: 2}
   xAxis: 0
   zAxis: 0
-  mouseX: 0
-  mouseY: 0
   jump: 0
   running: 0
 --- !u!1 &1585309780
