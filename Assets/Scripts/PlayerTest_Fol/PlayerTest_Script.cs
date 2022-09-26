@@ -10,19 +10,23 @@ public class PlayerTest_Script : MonoBehaviour
     [SerializeField] private InputManager_Script inputManager_Script;
     [SerializeField] private Player_Script player_Script;
     [SerializeField] private Camera_Script camera_Script;
+    [SerializeField] private TerrainManager terrainManager;
     //--------------------------//
 
     void Start()
     {
-        QualitySettings.vSyncCount = 1;
+        // QualitySettings.vSyncCount = 1;
         // Application.targetFrameRate = 30;
 
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        inputManager_Script.enabled = true;
-        player_Script.enabled = true;
+        // inputManager_Script.enabled = true;
+        // player_Script.enabled = true;
         camera_Script.enabled = true;
+
+        terrainManager.enabled = true;
+
     }
 
 }

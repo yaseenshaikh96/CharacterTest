@@ -14,10 +14,10 @@ public class Camera_Script : MonoBehaviour
     void Start()
     {
         cameraMain.enabled = true;
-        audioListener.enabled = true;
-        cinemachineBrain.enabled = true;
-        cinemachineFreeLook.enabled = true;
-        cinemachineCollider.enabled = true;
+        audioListener.enabled = false;
+        cinemachineBrain.enabled = false;
+        cinemachineFreeLook.enabled = false;
+        cinemachineCollider.enabled = false;
     }
 
 }

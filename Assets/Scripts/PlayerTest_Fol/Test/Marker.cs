@@ -34,6 +34,7 @@ public class MarkerList
         sphere.GetComponent<Renderer>().material.color = (Color)color;
         sphere.transform.parent = mParentGO.transform;
         sphere.gameObject.name = "Marker " + name;
+        sphere.transform.position = position;
 
         Marker marker = new Marker(name, (Vector3)position, (Color)color, sphere);
         mMarkers.Add(marker);
