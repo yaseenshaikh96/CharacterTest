@@ -8,16 +8,15 @@ public class TerrainManager : MonoBehaviour
     [SerializeField, Range(5, 20)] private float chunkSize; // in world pos
     [SerializeField] private bool isSmoothMesh;
     [SerializeField] private Material mesMaterial;
-
-    [SerializeField, Range(1, 100)] private float noiseScale;
+    [SerializeField] private NoiseData noiseData;
 
 
     void Start()
     {
         Chunk.Init
-        (
+        ( 
             pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
-            noiseScale
+            noiseData
         );
         Chunk chunk = new Chunk(Vector3.zero);
         Chunk chunk2 = new Chunk(new Vector3(-1, 0, 0) * chunkSize);

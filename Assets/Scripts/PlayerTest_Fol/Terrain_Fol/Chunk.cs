@@ -7,8 +7,8 @@ public class Chunk
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
-    public static float sNoiseScale { get; private set; }
     public static bool sIsSmoothMesh { get; private set; }
+    private static NoiseData mNoiseData;
 
     public Vector3 chunkPos { get; private set; } // unique ID
     //---------------------------------------------------------------------------------//
@@ -23,15 +23,15 @@ public class Chunk
     public static void Init
     (
         int pointsPerChunk, float chunkSize, bool isSmoothMesh, Material meshMaterial,
-        float noiseScale
+        NoiseData noiseData
     )
     {
         sPointsPerChunk = pointsPerChunk;
         sChunkSize = chunkSize;
         sIsSmoothMesh = isSmoothMesh;
         sMeshMaterial = meshMaterial;
+        mNoiseData = noiseData;
 
-        sNoiseScale = noiseScale;
 
 
         verticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
@@ -51,6 +51,14 @@ public class Chunk
             vertices = new Vector3[triangleIndexCount];
     }
 
+    public void Delete()
+    {
+        UnityEngine.GameObject.Destroy(meshGO);
+    }
+    ~Chunk()
+    {
+        Delete();
+    }
     static int verticesPosIndexCount, triangleIndexCount;
     public void Generate()
     {
@@ -148,6 +156,17 @@ public class Chunk
 
     private void MakeHeightData()
     {
+        System.Random prng = new System.Random(mNoiseData.seed);
+
+        Vector2[] octaveOffsets = new Vector2[mNoiseData.octave];
+
+        for (int i = 0; i < mNoiseData.octave; i++)
+        {
+            octaveOffsets[i].x = prng.Next(-10000, 10000) + mNoiseData.offset.x;
+            octaveOffsets[i].y = prng.Next(-10000, 10000) + mNoiseData.offset.y;
+        }
+
+
         for (int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
         {
             for (int zIndex = 0; zIndex < sPointsPerChunk; zIndex++)
@@ -156,12 +175,27 @@ public class Chunk
 
                 float xPos = ((float)xIndex / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)zIndex / (sPointsPerChunk - 1)) * sChunkSize;
+                xPos += chunkPos.x; // worldPos
+                zPos += chunkPos.z; // worldPos
 
-                float noisePosX = (xPos + chunkPos.x) / sNoiseScale;
-                float noisePosZ = (zPos + chunkPos.z) / sNoiseScale;
-                float noiseValue = Mathf.PerlinNoise(noisePosX, noisePosZ);
+                float frequency = 1;
+                float amplitude = 1;
 
-                heightData[currentIndex] = noiseValue;
+                float noiseForAllOct = 0;
+                for (int octIndex = 0; octIndex < mNoiseData.octave; octIndex++)
+                {
+                    float xPosAdj = (xPos + octaveOffsets[octIndex].x) / mNoiseData.scale * frequency;
+                    float zPosAdj = (zPos + octaveOffsets[octIndex].y) / mNoiseData.scale * frequency;
+
+                    float noiseForThisOct = Mathf.PerlinNoise(xPosAdj, zPosAdj);
+                    noiseForAllOct += noiseForThisOct * amplitude;
+
+                    frequency *= mNoiseData.lacunarity;
+                    amplitude *= mNoiseData.presistance;
+                }
+                // normalize height
+                // Debug.Log("CurrentHeight: " + noiseForAllOct);
+                heightData[currentIndex] = noiseForAllOct;
             }
         }
     }

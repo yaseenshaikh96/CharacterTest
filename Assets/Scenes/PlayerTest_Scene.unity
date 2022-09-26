@@ -1876,11 +1876,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21c4152c25f9d3643847d835761e1a01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointsPerChunk: 10
-  chunkSize: 10
+  pointsPerChunk: 15
+  chunkSize: 20
   isSmoothMesh: 0
   mesMaterial: {fileID: 2100000, guid: 9d55c711feed57a498c14d45b3e74889, type: 2}
-  noiseScale: 3
+  noiseData:
+    seed: 3
+    scale: 10
+    octave: 3
+    lacunarity: 1.6
+    presistance: 0.5
+    offset: {x: 0, y: 0}
 --- !u!1 &1186089833
 GameObject:
   m_ObjectHideFlags: 0
