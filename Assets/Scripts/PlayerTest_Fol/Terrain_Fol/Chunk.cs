@@ -62,8 +62,10 @@ public class Chunk
             {
                 int currentIndex = (xIndex * sPointsPerChunk) + zIndex;
 
-                float xPos = ((float)(xIndex) / sPointsPerChunk) * sChunkSize;
-                float zPos = ((float)(zIndex) / sPointsPerChunk) * sChunkSize;
+
+
+                float xPos = ((float)(xIndex) / (sPointsPerChunk - 1)) * sChunkSize;
+                float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float yPos = heightData[currentIndex];
 
                 vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + chunkPos;
@@ -152,8 +154,8 @@ public class Chunk
             {
                 int currentIndex = (xIndex * sPointsPerChunk) + zIndex;
 
-                float xPos = ((float)xIndex / sPointsPerChunk) * sChunkSize;
-                float zPos = ((float)zIndex / sPointsPerChunk) * sChunkSize;
+                float xPos = ((float)xIndex / (sPointsPerChunk - 1)) * sChunkSize;
+                float zPos = ((float)zIndex / (sPointsPerChunk - 1)) * sChunkSize;
 
                 float noisePosX = (xPos + chunkPos.x) / sNoiseScale;
                 float noisePosZ = (zPos + chunkPos.z) / sNoiseScale;

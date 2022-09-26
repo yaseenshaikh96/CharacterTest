@@ -1880,7 +1880,7 @@ MonoBehaviour:
   chunkSize: 10
   isSmoothMesh: 0
   mesMaterial: {fileID: 2100000, guid: 9d55c711feed57a498c14d45b3e74889, type: 2}
-  noiseScale: 5
+  noiseScale: 3
 --- !u!1 &1186089833
 GameObject:
   m_ObjectHideFlags: 0
