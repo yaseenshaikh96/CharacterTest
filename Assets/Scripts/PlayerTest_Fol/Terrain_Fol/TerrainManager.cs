@@ -2,8 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteInEditMode]
 public class TerrainManager : MonoBehaviour
 {
+    [SerializeField] private GameObject TestParentGO;
+    [SerializeField] private bool update = false;
+    [SerializeField] private bool clear = false;
     [SerializeField, Range(2, 20)] private int pointsPerChunk;
     [SerializeField, Range(5, 20)] private float chunkSize; // in world pos
     [SerializeField, Range(5, 20)] private float heightMultiplier;
@@ -15,21 +19,13 @@ public class TerrainManager : MonoBehaviour
 
     void Start()
     {
-        Chunk.Init
-        (
-            pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
-            noiseData,
-            heightMultiplier, heightCurve
-        );
-
-        MakeBigSquare();
-
 
     }
 
+    Chunk[,] chunks;
     void MakeBigSquare()
     {
-        Chunk[,] chunks = new Chunk[5, 5];
+        chunks = new Chunk[6, 3];
         for (int x = 0; x < chunks.GetLength(0); x++)
         {
             for (int z = 0; z < chunks.GetLength(1); z++)
@@ -40,37 +36,59 @@ public class TerrainManager : MonoBehaviour
             }
         }
     }
-
-    void MakeLongLineChunk()
+    //------------------------------------------------------------------------------------------------//
+    Chunk[,] chunksForEditor;
+    void Update() // only for editor
     {
-        Chunk[] chunks = new Chunk[40];
-        for (int i = -20; i < 20; i++)
+#if UNITY_EDITOR
+        if (clear)
         {
-            chunks[i + 20] = new Chunk(new Vector3(i, 0, 0) * chunkSize);
-            chunks[i + 20].Generate();
-            chunks[i + 20].MakeGameObject();
+            foreach (Transform child in TestParentGO.transform)
+            {
+                DestroyImmediate(child.gameObject);
+            }
+            clear = false; 
         }
+        if (update)
+        {
+            Debug.Log("Updated");
+            update = false;
+
+            Chunk.Init
+            (
+                TestParentGO,
+                pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
+                noiseData,
+                heightMultiplier, heightCurve
+            );
+
+            MakeBigSquareEditorVer();
+        }
+#endif
     }
 
-    void MakeQuadChunk()
-    {
-        Chunk chunk = new Chunk(Vector3.zero);
-        Chunk chunk2 = new Chunk(new Vector3(-1, 0, 0) * chunkSize);
-        Chunk chunk3 = new Chunk(new Vector3(0, 0, -1) * chunkSize);
-        Chunk chunk4 = new Chunk(new Vector3(-1, 0, -1) * chunkSize);
-
-        chunk.Generate();
-        chunk.MakeGameObject();
-        chunk2.Generate();
-        chunk2.MakeGameObject();
-        chunk3.Generate();
-        chunk3.MakeGameObject();
-        chunk4.Generate();
-        chunk4.MakeGameObject();
-    }
-
-    void Update()
+    void MakeBigSquareEditorVer()
     {
 
+        if (chunksForEditor != null)
+        {
+            for (int x = 0; x < chunksForEditor.GetLength(0); x++)
+            {
+                for (int z = 0; z < chunksForEditor.GetLength(1); z++)
+                {
+                    DestroyImmediate(chunksForEditor[x, z].meshGO);
+                }
+            }
+        }
+        chunksForEditor = new Chunk[5, 5];
+        for (int x = 0; x < chunksForEditor.GetLength(0); x++)
+        {
+            for (int z = 0; z < chunksForEditor.GetLength(1); z++)
+            {
+                chunksForEditor[x, z] = new Chunk(new Vector3(x, 0, z) * chunkSize);
+                chunksForEditor[x, z].Generate();
+                chunksForEditor[x, z].MakeGameObject();
+            }
+        }
     }
 }

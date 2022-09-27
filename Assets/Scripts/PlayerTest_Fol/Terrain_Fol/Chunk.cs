@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Chunk
 {
+    public static GameObject sParentGO { get; private set; }
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
@@ -18,17 +19,19 @@ public class Chunk
     Vector3[] vertexPositions;
     Vector3[] vertices;
     int[] triangles;
-    private GameObject meshGO;
+    public GameObject meshGO;
     float[] heightData; // height of each vertex
 
     //---------------------------------------------------------------------------------//
     public static void Init
     (
+        GameObject parentGO,
         int pointsPerChunk, float chunkSize, bool isSmoothMesh, Material meshMaterial,
         NoiseData noiseData,
         float heightMultiplier, AnimationCurve heightCurve
     )
     {
+        sParentGO = parentGO;
         sPointsPerChunk = pointsPerChunk;
         sChunkSize = chunkSize;
         sIsSmoothMesh = isSmoothMesh;
@@ -42,8 +45,6 @@ public class Chunk
         maxNoiseHeight = CalculateMaxNoiseHeight();
         verticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         triangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
-
-        Debug.Log("maxNoiseHeight: " + maxNoiseHeight);
     }
     public Chunk(Vector3 worldPos)
     {
@@ -57,7 +58,10 @@ public class Chunk
         else
             vertices = new Vector3[triangleIndexCount];
     }
-
+    public void Delete()
+    {
+        UnityEngine.GameObject.Destroy(meshGO);
+    }
     ~Chunk()
     {
         UnityEngine.GameObject.Destroy(meshGO);
@@ -216,6 +220,7 @@ public class Chunk
         meshGO = new GameObject($"Chunk {chunkPos.x} {chunkPos.z}");
         meshGO.AddComponent<MeshFilter>().mesh = mesh;
         meshGO.AddComponent<MeshRenderer>().material = sMeshMaterial;
+        meshGO.transform.SetParent(sParentGO.transform);
     }
 
     static float CalculateMaxNoiseHeight()
