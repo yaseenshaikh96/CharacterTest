@@ -8,7 +8,10 @@ public class Chunk
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
     public static bool sIsSmoothMesh { get; private set; }
+    public static float sHeightMultiplier { get; private set; }
+    public static AnimationCurve sHeightCurve { get; private set; }
     private static NoiseData mNoiseData;
+    private static float maxNoiseHeight;
 
     public Vector3 chunkPos { get; private set; } // unique ID
     //---------------------------------------------------------------------------------//
@@ -19,25 +22,29 @@ public class Chunk
     float[] heightData; // height of each vertex
 
     //---------------------------------------------------------------------------------//
-
     public static void Init
     (
         int pointsPerChunk, float chunkSize, bool isSmoothMesh, Material meshMaterial,
-        NoiseData noiseData
+        NoiseData noiseData,
+        float heightMultiplier, AnimationCurve heightCurve
     )
     {
         sPointsPerChunk = pointsPerChunk;
         sChunkSize = chunkSize;
         sIsSmoothMesh = isSmoothMesh;
         sMeshMaterial = meshMaterial;
+
         mNoiseData = noiseData;
 
+        sHeightMultiplier = heightMultiplier;
+        sHeightCurve = heightCurve;
 
-
+        maxNoiseHeight = CalculateMaxNoiseHeight();
         verticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         triangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
-    }
 
+        Debug.Log("maxNoiseHeight: " + maxNoiseHeight);
+    }
     public Chunk(Vector3 worldPos)
     {
         chunkPos = worldPos;
@@ -51,14 +58,11 @@ public class Chunk
             vertices = new Vector3[triangleIndexCount];
     }
 
-    public void Delete()
+    ~Chunk()
     {
         UnityEngine.GameObject.Destroy(meshGO);
     }
-    ~Chunk()
-    {
-        Delete();
-    }
+    //---------------------------------------------------------------------------------------------------------------------------//
     static int verticesPosIndexCount, triangleIndexCount;
     public void Generate()
     {
@@ -69,8 +73,6 @@ public class Chunk
             for (int zIndex = 0; zIndex < sPointsPerChunk; zIndex++)
             {
                 int currentIndex = (xIndex * sPointsPerChunk) + zIndex;
-
-
 
                 float xPos = ((float)(xIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
@@ -166,7 +168,6 @@ public class Chunk
             octaveOffsets[i].y = prng.Next(-10000, 10000) + mNoiseData.offset.y;
         }
 
-
         for (int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
         {
             for (int zIndex = 0; zIndex < sPointsPerChunk; zIndex++)
@@ -193,9 +194,11 @@ public class Chunk
                     frequency *= mNoiseData.lacunarity;
                     amplitude *= mNoiseData.presistance;
                 }
-                // normalize height
-                // Debug.Log("CurrentHeight: " + noiseForAllOct);
-                heightData[currentIndex] = noiseForAllOct;
+
+                float normalizedNoise = Remap(noiseForAllOct, 0, maxNoiseHeight, 0, 1);
+                float normalizedNoiseCurveAdj = normalizedNoise * sHeightCurve.Evaluate(normalizedNoise);
+
+                heightData[currentIndex] = normalizedNoiseCurveAdj * sHeightMultiplier;
             }
         }
     }
@@ -215,32 +218,22 @@ public class Chunk
         meshGO.AddComponent<MeshRenderer>().material = sMeshMaterial;
     }
 
-    //U = p2 - p1 and the vector V = p3 - p1 then the normal N = U X V
-    Vector3[] CalculateNormals()
+    static float CalculateMaxNoiseHeight()
     {
-        /*
-            normals are assigned to vertex.
-            so make it so that every triangle has unique points which it doesnt share with anyone
-            basically double the vertices
-            mesh wiil be made up of disjointed triangles
-        
-        */
-        Vector3[] normals = new Vector3[triangleIndexCount / 3];
-
-        for (int index = 0; index < normals.Length; index++)
+        float maxHeight = 0;
+        float amplitude = 1;
+        for (int octIndex = 0; octIndex < mNoiseData.octave; octIndex++)
         {
-            Vector3 point1 = vertexPositions[(int)triangles[(index * 3) + 0]];
-            Vector3 point2 = vertexPositions[(int)triangles[(index * 3) + 1]];
-            Vector3 point3 = vertexPositions[(int)triangles[(index * 3) + 2]];
-
-            Vector3 U = point2 - point1;
-            Vector3 V = point3 - point1;
-
-            normals[index] = Vector3.Cross(U, V);
-
+            float thisOctHeight = 1 * amplitude;
+            maxHeight += thisOctHeight;
+            amplitude *= mNoiseData.presistance;
         }
-
-        return normals;
+        return maxHeight;
     }
 
+
+    static float Remap(float source, float sourceFrom, float sourceTo, float targetFrom, float targetTo)
+    {
+        return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);
+    }
 }
