@@ -15,6 +15,9 @@ public class Chunk
     private static NoiseData mNoiseData;
     private static float maxNoiseHeight;
 
+    public bool isLoading {get; private set;}
+    public bool isLoaded {get; private set;}
+
     public Vector3 mWorldPos { get; private set; } // unique ID
     public Vector3 mChunkPos { get; private set; }
     //---------------------------------------------------------------------------------//
@@ -62,6 +65,9 @@ public class Chunk
         vertexPositions = new Vector3[verticesPosIndexCount];
         triangles = new int[triangleIndexCount];
 
+        isLoaded = false;
+        isLoading = false;
+
         if (sIsSmoothMesh)
             vertices = new Vector3[verticesPosIndexCount];
         else
@@ -76,6 +82,19 @@ public class Chunk
         UnityEngine.GameObject.Destroy(meshGO);
     }
     //---------------------------------------------------------------------------------------------------------------------------//
+
+    public void Make()
+    {
+        lock (this)
+        {
+            isLoading = true;
+            Generate();
+            MakeGameObject();
+            AddCollider();
+            isLoaded = true;
+        }
+    }
+
     static int verticesPosIndexCount, triangleIndexCount;
     public void Generate()
     {
