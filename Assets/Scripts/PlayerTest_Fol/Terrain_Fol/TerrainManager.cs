@@ -8,9 +8,9 @@ public class TerrainManager : MonoBehaviour
     [SerializeField] private GameObject TestParentGO;
     [SerializeField] private bool update = false;
     [SerializeField] private bool clear = false;
-    [SerializeField, Range(2, 20)] private int pointsPerChunk;
-    [SerializeField, Range(5, 20)] private float chunkSize; // in world pos
-    [SerializeField, Range(5, 20)] private float heightMultiplier;
+    [SerializeField, Range(2, 50)] private int pointsPerChunk;
+    [SerializeField, Range(5, 100)] private float chunkSize; // in world pos
+    [SerializeField, Range(5, 100)] private float heightMultiplier;
     [SerializeField] private bool isSmoothMesh;
     [SerializeField] private Material mesMaterial;
     [SerializeField] private NoiseData noiseData;
@@ -37,17 +37,17 @@ public class TerrainManager : MonoBehaviour
         }
     }
     //------------------------------------------------------------------------------------------------//
+#if UNITY_EDITOR
     Chunk[,] chunksForEditor;
     void Update() // only for editor
     {
-#if UNITY_EDITOR
         if (clear)
         {
             foreach (Transform child in TestParentGO.transform)
             {
                 DestroyImmediate(child.gameObject);
             }
-            clear = false; 
+            clear = false;
         }
         if (update)
         {
@@ -64,7 +64,6 @@ public class TerrainManager : MonoBehaviour
 
             MakeBigSquareEditorVer();
         }
-#endif
     }
 
     void MakeBigSquareEditorVer()
@@ -80,7 +79,7 @@ public class TerrainManager : MonoBehaviour
                 }
             }
         }
-        chunksForEditor = new Chunk[5, 5];
+        chunksForEditor = new Chunk[10, 10];
         for (int x = 0; x < chunksForEditor.GetLength(0); x++)
         {
             for (int z = 0; z < chunksForEditor.GetLength(1); z++)
@@ -88,7 +87,9 @@ public class TerrainManager : MonoBehaviour
                 chunksForEditor[x, z] = new Chunk(new Vector3(x, 0, z) * chunkSize);
                 chunksForEditor[x, z].Generate();
                 chunksForEditor[x, z].MakeGameObject();
+                chunksForEditor[x, z].AddCollider();
             }
         }
     }
+#endif
 }

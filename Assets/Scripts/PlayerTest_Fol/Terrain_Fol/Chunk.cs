@@ -20,6 +20,9 @@ public class Chunk
     Vector3[] vertices;
     int[] triangles;
     public GameObject meshGO;
+    private MeshFilter mMeshFilter;
+    private MeshRenderer mMeshRenderer;
+    private MeshCollider mMeshCollider;
     float[] heightData; // height of each vertex
 
     //---------------------------------------------------------------------------------//
@@ -218,9 +221,19 @@ public class Chunk
 
 
         meshGO = new GameObject($"Chunk {chunkPos.x} {chunkPos.z}");
-        meshGO.AddComponent<MeshFilter>().mesh = mesh;
-        meshGO.AddComponent<MeshRenderer>().material = sMeshMaterial;
+
+        mMeshFilter = meshGO.AddComponent<MeshFilter>();
+        mMeshFilter.mesh = mesh;
+
+        mMeshRenderer = meshGO.AddComponent<MeshRenderer>();
+        mMeshRenderer.material = sMeshMaterial;
+
         meshGO.transform.SetParent(sParentGO.transform);
+    }
+    public void AddCollider()
+    {
+        mMeshCollider = meshGO.AddComponent<MeshCollider>();
+        mMeshCollider.sharedMesh = mMeshFilter.sharedMesh;
     }
 
     static float CalculateMaxNoiseHeight()
