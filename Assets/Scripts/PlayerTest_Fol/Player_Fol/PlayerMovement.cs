@@ -187,7 +187,7 @@ public class PlayerMovement : MonoBehaviour
             currentPlayerState.Action();
             currentPlayerState.CheckForSwitch();
 
-            Debug.Log("state: " + currentPlayerState);
+            // Debug.Log("state: " + currentPlayerState);
 
             if (playerMovement.IsFallingSoft())
                 playerMovement.ApplyGravity();
@@ -400,7 +400,6 @@ public class PlayerMovement : MonoBehaviour
         }
         public override void Action()
         {
-            Debug.Log("In Jump");
             jump.Increment(1);
             jump.Update();
 

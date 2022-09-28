@@ -11,7 +11,7 @@ public class Chunk
 {
     public static GameObject sPlayerGO { get; private set; }
     public static GameObject sParentGO { get; private set; }
-    public static LayerMask sGroundLayer{get; private set;}
+    public static LayerMask sGroundLayer { get; private set; }
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
@@ -23,9 +23,10 @@ public class Chunk
     static int sVerticesPosIndexCount, sTriangleIndexCount;
     //---------------------------------------------------------------------------------//
     public bool heightDataLoaded { get; private set; }
-    public bool gameObjectMade {get;private set;}
+    public bool gameObjectMade { get; private set; }
     public Vector3 mWorldPos { get; private set; } // unique ID
     public Vector3 mChunkPos { get; private set; }
+    public float timeWhenCreated;
     //---------------------------------------------------------------------------------//
     Vector3[] vertexPositions;
     Vector3[] vertices;
@@ -66,20 +67,13 @@ public class Chunk
     }
     public Chunk(Vector3 chunkPos)
     {
+        timeWhenCreated = Time.time;
         mWorldPos = chunkPos * sChunkSize;
         mChunkPos = chunkPos;
-
-        heightData = new float[sVerticesPosIndexCount];
-        vertexPositions = new Vector3[sVerticesPosIndexCount];
-        triangles = new int[sTriangleIndexCount];
 
         heightDataLoaded = false;
         gameObjectMade = false;
 
-        if (sMeshType == MeshType.flat)
-            vertices = new Vector3[sTriangleIndexCount];
-        else if (sMeshType == MeshType.smooth)
-            vertices = new Vector3[sVerticesPosIndexCount];
     }
     public void Delete()
     {
@@ -92,6 +86,15 @@ public class Chunk
     //---------------------------------------------------------------------------------------------------------------------------//
     public void Generate()
     {
+        heightData = new float[sVerticesPosIndexCount];
+        vertexPositions = new Vector3[sVerticesPosIndexCount];
+        triangles = new int[sTriangleIndexCount];
+
+        if (sMeshType == MeshType.flat)
+            vertices = new Vector3[sTriangleIndexCount];
+        else if (sMeshType == MeshType.smooth)
+            vertices = new Vector3[sVerticesPosIndexCount];
+
         MakeHeightData();
 
         for (int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
@@ -137,11 +140,11 @@ public class Chunk
         mMeshCollider = meshGO.AddComponent<MeshCollider>();
         mMeshCollider.sharedMesh = mMeshFilter.sharedMesh;
 
-        Debug.Log("groundLayer: " + sGroundLayer);
-        meshGO.layer = sGroundLayer;
+        meshGO.layer = 8; //TODO:
 
         gameObjectMade = true;
     }
+    //-------------------------------------------------------------------------------//
     void FlatMesh()
     {
         int currentTriangleCount = 0;

@@ -11,19 +11,18 @@ public class TerrainDynamicLoad : MonoBehaviour
     Dictionary<Vector3, Chunk> loadedChunks, newLoadedChunks;
     void Start()
     {
-        loadedChunks = new Dictionary<Vector3, Chunk>(loadRadius * loadRadius);
-        newLoadedChunks = new Dictionary<Vector3, Chunk>(loadRadius * loadRadius);
+        loadedChunks = new Dictionary<Vector3, Chunk>();
+        newLoadedChunks = new Dictionary<Vector3, Chunk>();
     }
 
     float timeSinceLastLoaded = 0;
-    const float timeBtnLoad = 1f; // sec
+    const float timeBtnLoad = 0.5f; // sec
     void Update()
     {
         timeSinceLastLoaded += Time.deltaTime;
         if (timeSinceLastLoaded > timeBtnLoad)
         {
             timeSinceLastLoaded = 0;
-
             LoadChunksMultiThreaded();
         }
     }
@@ -32,14 +31,28 @@ public class TerrainDynamicLoad : MonoBehaviour
         int xPosPlayerInChunk = Mathf.RoundToInt(playerGO.transform.position.x / Chunk.sChunkSize);
         int zPosPlayerInChunk = Mathf.RoundToInt(playerGO.transform.position.z / Chunk.sChunkSize);
 
-        foreach (var chunks in loadedChunks)
+        foreach (var chunk in loadedChunks)
         {
-            if (chunks.Value.gameObjectMade)
-                break;
-            if (chunks.Value.heightDataLoaded)
-                chunks.Value.MakeGameObject();
+            if (!chunk.Value.gameObjectMade)
+            {
+                if (chunk.Value.heightDataLoaded)
+                {
+                    chunk.Value.MakeGameObject();
+                }
+                else
+                {
+                    Debug.Log("T: " + (Time.time - chunk.Value.timeWhenCreated));
+                    if (Time.time - chunk.Value.timeWhenCreated > 1)
+                    {
+                        Debug.Log("Redoing");
+                        chunk.Value.timeWhenCreated = Time.time;
+                        ThreadStart threadStart = new ThreadStart(chunk.Value.Generate);
+                        Thread thread = new Thread(threadStart);
+                        thread.Start();
+                    }
+                }
+            }
         }
-
 
         Dictionary<Vector3, Chunk> newLoadedChunks = new Dictionary<Vector3, Chunk>();
         for (int xIndex = -loadRadius; xIndex < loadRadius; xIndex++)
