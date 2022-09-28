@@ -5,9 +5,9 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class TerrainManager : MonoBehaviour
 {
+    [SerializeField] private TerrainDynamicLoad terrainDynamicLoad;
+    [SerializeField] private GameObject playerGO;
     [SerializeField] private GameObject TestParentGO;
-    [SerializeField] private bool update = false;
-    [SerializeField] private bool clear = false;
     [SerializeField, Range(2, 50)] private int pointsPerChunk;
     [SerializeField, Range(5, 100)] private float chunkSize; // in world pos
     [SerializeField, Range(5, 100)] private float heightMultiplier;
@@ -19,77 +19,72 @@ public class TerrainManager : MonoBehaviour
 
     void Start()
     {
+        TestParentGO.SetActive(false);
 
-    }
-
-    Chunk[,] chunks;
-    void MakeBigSquare()
-    {
-        chunks = new Chunk[6, 3];
-        for (int x = 0; x < chunks.GetLength(0); x++)
-        {
-            for (int z = 0; z < chunks.GetLength(1); z++)
-            {
-                chunks[x, z] = new Chunk(new Vector3(x, 0, z) * chunkSize);
-                chunks[x, z].Generate();
-                chunks[x, z].MakeGameObject();
-            }
-        }
+        Chunk.Init(
+            playerGO, this.gameObject,
+            pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
+            noiseData, heightMultiplier, heightCurve
+        );
+        terrainDynamicLoad.enabled = true;
     }
     //------------------------------------------------------------------------------------------------//
-#if UNITY_EDITOR
-    Chunk[,] chunksForEditor;
-    void Update() // only for editor
-    {
-        if (clear)
+
+    /*
+    #if UNITY_EDITOR
+        Chunk[,] chunksForEditor;
+        void Update() // only for editor
         {
-            foreach (Transform child in TestParentGO.transform)
+            if (clear)
             {
-                DestroyImmediate(child.gameObject);
+                foreach (Transform child in TestParentGO.transform)
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+                clear = false;
             }
-            clear = false;
+            if (update)
+            {
+                Debug.Log("Updated");
+                update = false;
+
+                Chunk.Init
+                (
+                    playerGO, TestParentGO,
+                    pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
+                    noiseData,
+                    heightMultiplier, heightCurve
+                );
+
+                MakeBigSquareEditorVer();
+            }
         }
-        if (update)
+
+        void MakeBigSquareEditorVer()
         {
-            Debug.Log("Updated");
-            update = false;
 
-            Chunk.Init
-            (
-                TestParentGO,
-                pointsPerChunk, chunkSize, isSmoothMesh, mesMaterial,
-                noiseData,
-                heightMultiplier, heightCurve
-            );
-
-            MakeBigSquareEditorVer();
-        }
-    }
-
-    void MakeBigSquareEditorVer()
-    {
-
-        if (chunksForEditor != null)
-        {
+            if (chunksForEditor != null)
+            {
+                for (int x = 0; x < chunksForEditor.GetLength(0); x++)
+                {
+                    for (int z = 0; z < chunksForEditor.GetLength(1); z++)
+                    {
+                        DestroyImmediate(chunksForEditor[x, z].meshGO);
+                    }
+                }
+            }
+            chunksForEditor = new Chunk[10, 10];
             for (int x = 0; x < chunksForEditor.GetLength(0); x++)
             {
                 for (int z = 0; z < chunksForEditor.GetLength(1); z++)
                 {
-                    DestroyImmediate(chunksForEditor[x, z].meshGO);
+                    chunksForEditor[x, z] = new Chunk(new Vector3(x, 0, z) ;
+                    chunksForEditor[x, z].Generate();
+                    chunksForEditor[x, z].MakeGameObject();
+                    chunksForEditor[x, z].AddCollider();
                 }
             }
         }
-        chunksForEditor = new Chunk[10, 10];
-        for (int x = 0; x < chunksForEditor.GetLength(0); x++)
-        {
-            for (int z = 0; z < chunksForEditor.GetLength(1); z++)
-            {
-                chunksForEditor[x, z] = new Chunk(new Vector3(x, 0, z) * chunkSize);
-                chunksForEditor[x, z].Generate();
-                chunksForEditor[x, z].MakeGameObject();
-                chunksForEditor[x, z].AddCollider();
-            }
-        }
-    }
-#endif
+    #endif
+    */
 }

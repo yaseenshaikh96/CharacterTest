@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Chunk
 {
+    public static GameObject sPlayerGO { get; private set; }
     public static GameObject sParentGO { get; private set; }
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
@@ -14,7 +15,8 @@ public class Chunk
     private static NoiseData mNoiseData;
     private static float maxNoiseHeight;
 
-    public Vector3 chunkPos { get; private set; } // unique ID
+    public Vector3 mWorldPos { get; private set; } // unique ID
+    public Vector3 mChunkPos { get; private set; }
     //---------------------------------------------------------------------------------//
     Vector3[] vertexPositions;
     Vector3[] vertices;
@@ -28,13 +30,15 @@ public class Chunk
     //---------------------------------------------------------------------------------//
     public static void Init
     (
-        GameObject parentGO,
+        GameObject playerGO, GameObject parentGO,
         int pointsPerChunk, float chunkSize, bool isSmoothMesh, Material meshMaterial,
         NoiseData noiseData,
         float heightMultiplier, AnimationCurve heightCurve
     )
     {
+        sPlayerGO = playerGO;
         sParentGO = parentGO;
+
         sPointsPerChunk = pointsPerChunk;
         sChunkSize = chunkSize;
         sIsSmoothMesh = isSmoothMesh;
@@ -49,9 +53,11 @@ public class Chunk
         verticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         triangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
     }
-    public Chunk(Vector3 worldPos)
+    public Chunk(Vector3 chunkPos)
     {
-        chunkPos = worldPos;
+        mWorldPos = chunkPos * sChunkSize;
+        mChunkPos = chunkPos;
+
         heightData = new float[verticesPosIndexCount];
         vertexPositions = new Vector3[verticesPosIndexCount];
         triangles = new int[triangleIndexCount];
@@ -85,7 +91,7 @@ public class Chunk
                 float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float yPos = heightData[currentIndex];
 
-                vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + chunkPos;
+                vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + mWorldPos;
             }
         }
 
@@ -183,8 +189,8 @@ public class Chunk
 
                 float xPos = ((float)xIndex / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)zIndex / (sPointsPerChunk - 1)) * sChunkSize;
-                xPos += chunkPos.x; // worldPos
-                zPos += chunkPos.z; // worldPos
+                xPos += mWorldPos.x; // worldPos
+                zPos += mWorldPos.z; // worldPos
 
                 float frequency = 1;
                 float amplitude = 1;
@@ -220,7 +226,7 @@ public class Chunk
         // mesh.SetNormals(CalculateNormals());
 
 
-        meshGO = new GameObject($"Chunk {chunkPos.x} {chunkPos.z}");
+        meshGO = new GameObject($"Chunk {mWorldPos.x} {mWorldPos.z}");
 
         mMeshFilter = meshGO.AddComponent<MeshFilter>();
         mMeshFilter.mesh = mesh;
