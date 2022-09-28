@@ -2,49 +2,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MeshType
+{
+    flat, smooth
+}
+
 public class Chunk
 {
     public static GameObject sPlayerGO { get; private set; }
     public static GameObject sParentGO { get; private set; }
+    public static LayerMask sGroundLayer{get; private set;}
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
-    public static bool sIsSmoothMesh { get; private set; }
+    public static MeshType sMeshType { get; private set; }
     public static float sHeightMultiplier { get; private set; }
     public static AnimationCurve sHeightCurve { get; private set; }
-    private static NoiseData mNoiseData;
-    private static float maxNoiseHeight;
-
-    public bool isLoading {get; private set;}
-    public bool isLoaded {get; private set;}
-
+    static NoiseData mNoiseData;
+    static float maxNoiseHeight;
+    static int sVerticesPosIndexCount, sTriangleIndexCount;
+    //---------------------------------------------------------------------------------//
+    public bool heightDataLoaded { get; private set; }
+    public bool gameObjectMade {get;private set;}
     public Vector3 mWorldPos { get; private set; } // unique ID
     public Vector3 mChunkPos { get; private set; }
     //---------------------------------------------------------------------------------//
     Vector3[] vertexPositions;
     Vector3[] vertices;
     int[] triangles;
+    Vector3[] normals;
     public GameObject meshGO;
-    private MeshFilter mMeshFilter;
-    private MeshRenderer mMeshRenderer;
-    private MeshCollider mMeshCollider;
+    MeshFilter mMeshFilter;
+    MeshRenderer mMeshRenderer;
+    MeshCollider mMeshCollider;
     float[] heightData; // height of each vertex
 
     //---------------------------------------------------------------------------------//
     public static void Init
     (
-        GameObject playerGO, GameObject parentGO,
-        int pointsPerChunk, float chunkSize, bool isSmoothMesh, Material meshMaterial,
+        GameObject playerGO, GameObject parentGO, LayerMask groundLayer,
+        int pointsPerChunk, float chunkSize, MeshType meshType, Material meshMaterial,
         NoiseData noiseData,
         float heightMultiplier, AnimationCurve heightCurve
     )
     {
         sPlayerGO = playerGO;
         sParentGO = parentGO;
+        sGroundLayer = groundLayer;
 
         sPointsPerChunk = pointsPerChunk;
         sChunkSize = chunkSize;
-        sIsSmoothMesh = isSmoothMesh;
+        sMeshType = meshType;
         sMeshMaterial = meshMaterial;
 
         mNoiseData = noiseData;
@@ -53,25 +61,25 @@ public class Chunk
         sHeightCurve = heightCurve;
 
         maxNoiseHeight = CalculateMaxNoiseHeight();
-        verticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
-        triangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
+        sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
+        sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
     }
     public Chunk(Vector3 chunkPos)
     {
         mWorldPos = chunkPos * sChunkSize;
         mChunkPos = chunkPos;
 
-        heightData = new float[verticesPosIndexCount];
-        vertexPositions = new Vector3[verticesPosIndexCount];
-        triangles = new int[triangleIndexCount];
+        heightData = new float[sVerticesPosIndexCount];
+        vertexPositions = new Vector3[sVerticesPosIndexCount];
+        triangles = new int[sTriangleIndexCount];
 
-        isLoaded = false;
-        isLoading = false;
+        heightDataLoaded = false;
+        gameObjectMade = false;
 
-        if (sIsSmoothMesh)
-            vertices = new Vector3[verticesPosIndexCount];
-        else
-            vertices = new Vector3[triangleIndexCount];
+        if (sMeshType == MeshType.flat)
+            vertices = new Vector3[sTriangleIndexCount];
+        else if (sMeshType == MeshType.smooth)
+            vertices = new Vector3[sVerticesPosIndexCount];
     }
     public void Delete()
     {
@@ -82,20 +90,6 @@ public class Chunk
         UnityEngine.GameObject.Destroy(meshGO);
     }
     //---------------------------------------------------------------------------------------------------------------------------//
-
-    public void Make()
-    {
-        lock (this)
-        {
-            isLoading = true;
-            Generate();
-            MakeGameObject();
-            AddCollider();
-            isLoaded = true;
-        }
-    }
-
-    static int verticesPosIndexCount, triangleIndexCount;
     public void Generate()
     {
         MakeHeightData();
@@ -114,12 +108,40 @@ public class Chunk
             }
         }
 
-        if (sIsSmoothMesh)
-            SmoothMesh();
-        else
+        if (sMeshType == MeshType.flat)
             FlatMesh();
+        else if (sMeshType == MeshType.smooth)
+            SmoothMesh();
+
+        heightDataLoaded = true;
     }
 
+    public void MakeGameObject()
+    {
+        Mesh mesh = new Mesh();
+        mesh.SetVertices(vertices);
+        mesh.triangles = triangles;
+
+        mesh.RecalculateNormals();
+
+        meshGO = new GameObject($"Chunk {mWorldPos.x} {mWorldPos.z}");
+
+        mMeshFilter = meshGO.AddComponent<MeshFilter>();
+        mMeshFilter.mesh = mesh;
+
+        mMeshRenderer = meshGO.AddComponent<MeshRenderer>();
+        mMeshRenderer.material = sMeshMaterial;
+
+        meshGO.transform.SetParent(sParentGO.transform);
+
+        mMeshCollider = meshGO.AddComponent<MeshCollider>();
+        mMeshCollider.sharedMesh = mMeshFilter.sharedMesh;
+
+        Debug.Log("groundLayer: " + sGroundLayer);
+        meshGO.layer = sGroundLayer;
+
+        gameObjectMade = true;
+    }
     void FlatMesh()
     {
         int currentTriangleCount = 0;
@@ -158,7 +180,7 @@ public class Chunk
     }
     void SmoothMesh()
     {
-        for (int index = 0; index < verticesPosIndexCount; index++)
+        for (int index = 0; index < sVerticesPosIndexCount; index++)
             vertices[index] = vertexPositions[index];
 
         int currentTriangleIndex = 0;
@@ -235,32 +257,7 @@ public class Chunk
         }
     }
 
-    public void MakeGameObject()
-    {
-        Mesh mesh = new Mesh();
-        mesh.SetVertices(vertices);
-        mesh.triangles = triangles;
-
-        mesh.RecalculateNormals();
-        // mesh.SetNormals(CalculateNormals());
-
-
-        meshGO = new GameObject($"Chunk {mWorldPos.x} {mWorldPos.z}");
-
-        mMeshFilter = meshGO.AddComponent<MeshFilter>();
-        mMeshFilter.mesh = mesh;
-
-        mMeshRenderer = meshGO.AddComponent<MeshRenderer>();
-        mMeshRenderer.material = sMeshMaterial;
-
-        meshGO.transform.SetParent(sParentGO.transform);
-    }
-    public void AddCollider()
-    {
-        mMeshCollider = meshGO.AddComponent<MeshCollider>();
-        mMeshCollider.sharedMesh = mMeshFilter.sharedMesh;
-    }
-
+    //----------------------------------------------------------------------------------------//
     static float CalculateMaxNoiseHeight()
     {
         float maxHeight = 0;
@@ -273,8 +270,6 @@ public class Chunk
         }
         return maxHeight;
     }
-
-
     static float Remap(float source, float sourceFrom, float sourceTo, float targetFrom, float targetTo)
     {
         return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);

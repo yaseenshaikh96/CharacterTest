@@ -21,8 +21,8 @@ public class PlayerTest_Script : MonoBehaviour
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        // inputManager_Script.enabled = true;
-        // player_Script.enabled = true;
+        inputManager_Script.enabled = true;
+        player_Script.enabled = true;
         camera_Script.enabled = true;
 
         terrainManager.enabled = true;
