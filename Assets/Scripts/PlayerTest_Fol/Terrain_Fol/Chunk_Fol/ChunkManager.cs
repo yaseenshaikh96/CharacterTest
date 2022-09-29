@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class TerrainManager : MonoBehaviour
+public class ChunkManager : MonoBehaviour
 {
     [SerializeField] private bool update, clear;
+    [SerializeField, Range(4, 10)] private int ChunkLoadCountForEditor; 
     [SerializeField] private TerrainDynamicLoad terrainDynamicLoad;
     [SerializeField] private GameObject playerGO;
     [SerializeField] private GameObject TestParentGO;
@@ -79,7 +80,7 @@ public class TerrainManager : MonoBehaviour
                 }
             }
         }
-        chunksForEditor = new Chunk[30, 30];
+        chunksForEditor = new Chunk[ChunkLoadCountForEditor, ChunkLoadCountForEditor];
         for (int x = 0; x < chunksForEditor.GetLength(0); x++)
         {
             for (int z = 0; z < chunksForEditor.GetLength(1); z++)

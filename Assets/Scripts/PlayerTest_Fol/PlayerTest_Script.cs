@@ -5,12 +5,13 @@ using UnityEngine.SceneManagement;
 
 public class PlayerTest_Script : MonoBehaviour
 {
-    
+
     GameData_Script gameData;
     [SerializeField] private InputManager_Script inputManager_Script;
     [SerializeField] private Player_Script player_Script;
     [SerializeField] private Camera_Script camera_Script;
-    [SerializeField] private TerrainManager terrainManager;
+
+    [SerializeField] private TerrainManager_Script terrainManager_Script;
     //--------------------------//
 
     void Start()
@@ -25,8 +26,7 @@ public class PlayerTest_Script : MonoBehaviour
         player_Script.enabled = true;
         camera_Script.enabled = true;
 
-        terrainManager.enabled = true;
-
+        terrainManager_Script.enabled = true;
     }
 
 }

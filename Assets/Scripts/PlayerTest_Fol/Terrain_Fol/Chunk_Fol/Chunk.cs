@@ -29,7 +29,10 @@ public class Chunk
     public Vector3 mChunkPos { get; private set; }
     public float timeWhenCreated;
     //---------------------------------------------------------------------------------//
+    List<GameObject> spawnableGOs;
+    GameObject waterParent;
     Vector3[] vertexPositions;
+    bool[] spawnablePoints;
     Vector3[] vertices;
     int[] triangles;
     Color[] colors;
@@ -81,13 +84,14 @@ public class Chunk
     }
     public void Delete()
     {
-        UnityEngine.GameObject.Destroy(meshGO);
+        foreach (var spawn in spawnableGOs)
+            UnityEngine.GameObject.Destroy(spawn);
         UnityEngine.GameObject.Destroy(waterParent);
+        UnityEngine.GameObject.Destroy(meshGO);
     }
     ~Chunk()
     {
-        UnityEngine.GameObject.Destroy(meshGO);
-        UnityEngine.GameObject.Destroy(waterParent);
+        Delete();
     }
     //---------------------------------------------------------------------------------------------------------------------------//
     public void Generate()
@@ -96,6 +100,8 @@ public class Chunk
         vertexPositions = new Vector3[sVerticesPosIndexCount];
         triangles = new int[sTriangleIndexCount];
         colors = new Color[sTriangleIndexCount];
+        spawnablePoints = new bool[sVerticesPosIndexCount];
+        spawnableGOs = new List<GameObject>();
 
         if (sMeshType == MeshType.flat)
             vertices = new Vector3[sTriangleIndexCount];
@@ -127,6 +133,7 @@ public class Chunk
             SmoothMesh();
         }
 
+        FindSpawnablePoints();
         heightDataLoaded = true;
     }
 
@@ -155,11 +162,69 @@ public class Chunk
         meshGO.layer = 8; //TODO:
 
         MakeWaterMesh();
-
+        SpawnSpawnable();
         gameObjectMade = true;
+
     }
     //-------------------------------------------------------------------------------//
-    GameObject waterParent;
+    void SpawnSpawnable()
+    {
+        Random.InitState(mNoiseData.seed);
+        for (int i = 0; i < spawnablePoints.Length; i++)
+        {
+            if (spawnablePoints[i] && Random.value < 0.2f)
+            {
+                Tree tree = new Tree(vertexPositions[i], meshGO);
+            }
+        }
+    }
+    void FindSpawnablePoints()
+    {
+        float[] neighbourPointsY = new float[8];
+        for (int xIndex = 1; xIndex < sPointsPerChunk - 1; xIndex++)
+        {
+            for (int zIndex = 1; zIndex < sPointsPerChunk - 1; zIndex++)
+            {
+                int currentIndex = (xIndex * sPointsPerChunk) + zIndex;
+                Vector3 currentPoint = vertexPositions[currentIndex];
+                neighbourPointsY[0] = vertexPositions[currentIndex + 1].y;
+                neighbourPointsY[1] = vertexPositions[currentIndex - 1].y;
+
+                neighbourPointsY[2] = vertexPositions[currentIndex + sPointsPerChunk].y;
+                neighbourPointsY[3] = vertexPositions[currentIndex - sPointsPerChunk].y;
+
+                neighbourPointsY[4] = vertexPositions[currentIndex - sPointsPerChunk + 1].y;
+                neighbourPointsY[5] = vertexPositions[currentIndex - sPointsPerChunk - 1].y;
+
+                neighbourPointsY[6] = vertexPositions[currentIndex + sPointsPerChunk + 1].y;
+                neighbourPointsY[7] = vertexPositions[currentIndex + sPointsPerChunk - 1].y;
+
+                float deviation = FindDeviation(neighbourPointsY);
+                if (
+                    deviation < 0.5f &&
+                    currentPoint.y > 0.22f * sHeightMultiplier &&
+                    currentPoint.y < 0.28f * sHeightMultiplier
+                )
+                    spawnablePoints[currentIndex] = true;
+                else
+                    spawnablePoints[currentIndex] = false;
+            }
+        }
+
+        float FindDeviation(params float[] values)
+        {
+            float avg = 0;
+            for (int i = 0; i < values.Length; i++)
+                avg += values[i];
+
+            avg /= values.Length;
+            float deviation = 0;
+            for (int i = 0; i < values.Length; i++)
+                deviation = (values[i] - avg) * (values[i] - avg);
+
+            return Mathf.Sqrt(deviation / values.Length);
+        }
+    }
     void MakeWaterMesh()
     {
         waterParent = new GameObject("waterParent");
