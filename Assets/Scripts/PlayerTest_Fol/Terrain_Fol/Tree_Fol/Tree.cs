@@ -12,7 +12,7 @@ public class Tree
     int mTreeIndex;
 
     //------------------------------------------------------------------------------------------//
-    public static void Init(GameObject[] treePrefabs)
+    public static void Init(params GameObject[] treePrefabs)
     {
         sTreePrefabs = treePrefabs;
     }

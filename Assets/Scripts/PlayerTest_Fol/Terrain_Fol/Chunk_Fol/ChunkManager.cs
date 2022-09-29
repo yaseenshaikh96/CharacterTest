@@ -20,6 +20,7 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private NoiseData noiseData;
     [SerializeField] private AnimationCurve heightCurve;
 
+    public static List<float> allpoints;
 
     void Start()
     {
@@ -52,6 +53,7 @@ public class ChunkManager : MonoBehaviour
         }
         if (update)
         {
+            allpoints = new List<float>();
             Debug.Log("Updated");
             update = false;
 
@@ -62,9 +64,52 @@ public class ChunkManager : MonoBehaviour
                 noiseData,
                 heightMultiplier, heightCurve
             );
+            Tree.Init(GameObject.CreatePrimitive(PrimitiveType.Cube));
 
             MakeBigSquareEditorVer();
+            PointsStuff();
         }
+    }
+    void PointsStuff()
+    {
+        int category01=0,category02=0,category03=0, category04=0,category05=0,category06=0,category07=0,category08=0,category09=0,category10=0;
+        int allCount = allpoints.Count;
+        foreach(float value in allpoints)
+        {
+            if(value < 0.1f)
+                category01++;
+            else if(value < 0.2f)
+                category02++;
+            else if(value < 0.3f)
+                category03++;
+            else if(value < 0.4f)
+                category04++;
+            else if(value < 0.5f)
+                category05++;
+            else if(value < 0.6f)
+                category06++;
+            else if(value < 0.7f)
+                category07++;
+            else if(value < 0.8f)
+                category08++;
+            else if(value < 0.9f)
+                category09++;
+            else if(value < 1.0f)
+                category10++;
+        }       
+        Debug.Log(
+            $"total Points: {allCount}" +
+            $"0.0-0.1: {category01}, {100*(float)category01/allCount}% \n" +
+            $"0.1-0.2: {category02}, {100*(float)category02/allCount}% \n" +
+            $"0.2-0.3: {category03}, {100*(float)category03/allCount}% \n" +
+            $"0.3-0.4: {category04}, {100*(float)category04/allCount}% \n" +
+            $"0.4-0.5: {category05}, {100*(float)category05/allCount}% \n" +
+            $"0.5-0.6: {category06}, {100*(float)category06/allCount}% \n" +
+            $"0.6-0.7: {category07}, {100*(float)category07/allCount}% \n" +
+            $"0.7-0.8: {category08}, {100*(float)category08/allCount}% \n" +
+            $"0.8-0.9: {category09}, {100*(float)category09/allCount}% \n" +
+            $"0.9-1.0: {category10}, {100*(float)category10/allCount}% \n" 
+        );
     }
 
     void MakeBigSquareEditorVer()

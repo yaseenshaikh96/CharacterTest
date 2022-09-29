@@ -369,7 +369,7 @@ public class Chunk
 
                 float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
                 float normalizedNoiseCurveAdj = normalizedNoise * sHeightCurve.Evaluate(normalizedNoise);
-
+                ChunkManager.allpoints.Add(normalizedNoise);
                 heightData[currentIndex] = normalizedNoiseCurveAdj * sHeightMultiplier;
             }
         }

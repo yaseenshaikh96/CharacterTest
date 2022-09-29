@@ -8,7 +8,6 @@ public class TerrainManager_Script : MonoBehaviour
     [SerializeField] private TerrainDynamicLoad terrainDynamicLoad;
     [SerializeField] private TreeManager treeManager;
 
-
     void Start()
     {
         chunkManager.enabled = true;
