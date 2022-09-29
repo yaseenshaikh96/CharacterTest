@@ -15,6 +15,7 @@ public class Chunk
     public static float sChunkSize { get; private set; }
     public static int sPointsPerChunk { get; private set; }
     public static Material sMeshMaterial { get; private set; }
+    public static Material sWaterMaterial { get; private set; }
     public static MeshType sMeshType { get; private set; }
     public static float sHeightMultiplier { get; private set; }
     public static AnimationCurve sHeightCurve { get; private set; }
@@ -43,7 +44,7 @@ public class Chunk
     public static void Init
     (
         GameObject playerGO, GameObject parentGO, LayerMask groundLayer,
-        int pointsPerChunk, float chunkSize, MeshType meshType, Material meshMaterial,
+        int pointsPerChunk, float chunkSize, MeshType meshType, Material meshMaterial, Material waterMaterial,
         NoiseData noiseData,
         float heightMultiplier, AnimationCurve heightCurve
     )
@@ -56,6 +57,7 @@ public class Chunk
         sChunkSize = chunkSize;
         sMeshType = meshType;
         sMeshMaterial = meshMaterial;
+        sWaterMaterial = waterMaterial;
 
         mNoiseData = noiseData;
 
@@ -80,10 +82,12 @@ public class Chunk
     public void Delete()
     {
         UnityEngine.GameObject.Destroy(meshGO);
+        UnityEngine.GameObject.Destroy(waterParent);
     }
     ~Chunk()
     {
         UnityEngine.GameObject.Destroy(meshGO);
+        UnityEngine.GameObject.Destroy(waterParent);
     }
     //---------------------------------------------------------------------------------------------------------------------------//
     public void Generate()
@@ -131,7 +135,7 @@ public class Chunk
         Mesh mesh = new Mesh();
         mesh.SetVertices(vertices);
         mesh.triangles = triangles;
-        if(colors != null)
+        if (colors != null)
             mesh.SetColors(colors);
         mesh.RecalculateNormals();
 
@@ -150,9 +154,26 @@ public class Chunk
 
         meshGO.layer = 8; //TODO:
 
+        MakeWaterMesh();
+
         gameObjectMade = true;
     }
     //-------------------------------------------------------------------------------//
+    GameObject waterParent;
+    void MakeWaterMesh()
+    {
+        waterParent = new GameObject("waterParent");
+        waterParent.transform.parent = meshGO.transform;
+
+        waterParent.transform.position = mWorldPos;
+        GameObject waterGO = UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Quad);
+
+        waterGO.transform.Rotate(Vector3.right * 90);
+        waterGO.transform.localScale = Vector3.one * sChunkSize;
+        waterGO.transform.parent = waterParent.transform;
+        waterGO.transform.localPosition = new Vector3(sChunkSize / 2, sHeightMultiplier * 0.2f, sChunkSize / 2);
+        waterGO.GetComponent<Renderer>().material = sWaterMaterial;
+    }
     void FlatMesh()
     {
         int currentTriangleCount = 0;
@@ -295,15 +316,15 @@ public class Chunk
         // Debug.Log("midpointNormalize: " + midPointYNormalized);
 
         Color color;
-        if(midPointYNormalized  < 0.2f)
+        if (midPointYNormalized < 0.2f)
             color = new Color(0, 0.2f, 0.8f);
-        else if(midPointYNormalized < 0.24f)
+        else if (midPointYNormalized < 0.24f)
             color = new Color(0.7f, 0.5f, 0.5f);
-        else if(midPointYNormalized < 0.35f)
+        else if (midPointYNormalized < 0.35f)
             color = new Color(0.2f, 0.8f, 0.2f);
-        else if(midPointYNormalized < 0.5f)
+        else if (midPointYNormalized < 0.5f)
             color = new Color(0.4f, 0.1f, 0.1f);
-        else    
+        else
             color = new Color(0.8f, 0.8f, 0.8f);
 
         return color;

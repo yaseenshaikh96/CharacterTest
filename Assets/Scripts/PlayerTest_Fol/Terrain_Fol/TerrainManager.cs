@@ -12,9 +12,10 @@ public class TerrainManager : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField, Range(2, 50)] private int pointsPerChunk;
     [SerializeField, Range(5, 100)] private float chunkSize; // in world pos
-    [SerializeField, Range(5, 100)] private float heightMultiplier;
+    [SerializeField, Range(5, 500)] private float heightMultiplier;
     [SerializeField] private MeshType meshType;
-    [SerializeField] private Material mesMaterial;
+    [SerializeField] private Material meshMaterial;
+    [SerializeField] private Material waterMaterial;
     [SerializeField] private NoiseData noiseData;
     [SerializeField] private AnimationCurve heightCurve;
 
@@ -27,7 +28,7 @@ public class TerrainManager : MonoBehaviour
 
             Chunk.Init(
                 playerGO, this.gameObject, groundLayer,
-                pointsPerChunk, chunkSize, meshType, mesMaterial,
+                pointsPerChunk, chunkSize, meshType, meshMaterial, waterMaterial,
                 noiseData, heightMultiplier, heightCurve
             );
             terrainDynamicLoad.enabled = true;
@@ -56,7 +57,7 @@ public class TerrainManager : MonoBehaviour
             Chunk.Init
             (
                 playerGO, TestParentGO, groundLayer,
-                pointsPerChunk, chunkSize, meshType, mesMaterial,
+                pointsPerChunk, chunkSize, meshType, meshMaterial, waterMaterial,
                 noiseData,
                 heightMultiplier, heightCurve
             );
@@ -78,7 +79,7 @@ public class TerrainManager : MonoBehaviour
                 }
             }
         }
-        chunksForEditor = new Chunk[10, 10];
+        chunksForEditor = new Chunk[30, 30];
         for (int x = 0; x < chunksForEditor.GetLength(0); x++)
         {
             for (int z = 0; z < chunksForEditor.GetLength(1); z++)
