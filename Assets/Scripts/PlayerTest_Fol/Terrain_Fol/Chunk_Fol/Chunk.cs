@@ -19,6 +19,7 @@ public class Chunk
     public static MeshType sMeshType { get; private set; }
     public static float sHeightMultiplier { get; private set; }
     public static AnimationCurve sHeightCurve { get; private set; }
+    public static Color[] sColorBank;
     static NoiseData mNoiseData;
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
@@ -41,7 +42,7 @@ public class Chunk
     MeshFilter mMeshFilter;
     MeshRenderer mMeshRenderer;
     MeshCollider mMeshCollider;
-    float[] heightData; // height of each vertex
+    float[] heightDataNormalized; // height of each vertex
 
     //---------------------------------------------------------------------------------//
     public static void Init
@@ -68,6 +69,7 @@ public class Chunk
         sHeightCurve = heightCurve;
 
         sMaxNoiseHeight = CalculateMaxNoiseHeight();
+        MakeStaticColors();
 
         sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
@@ -96,7 +98,7 @@ public class Chunk
     //---------------------------------------------------------------------------------------------------------------------------//
     public void Generate()
     {
-        heightData = new float[sVerticesPosIndexCount];
+        heightDataNormalized = new float[sVerticesPosIndexCount];
         vertexPositions = new Vector3[sVerticesPosIndexCount];
         triangles = new int[sTriangleIndexCount];
         colors = new Color[sTriangleIndexCount];
@@ -118,7 +120,7 @@ public class Chunk
 
                 float xPos = ((float)(xIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
-                float yPos = heightData[currentIndex];
+                float yPos = heightDataNormalized[currentIndex] * sHeightMultiplier; // heightCure.Evaluate();
 
                 vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + mWorldPos;
             }
@@ -261,15 +263,26 @@ public class Chunk
                 vertices[currentTriangleCount + 4] = vertexPositions[topRightPointIndex];
                 vertices[currentTriangleCount + 5] = vertexPositions[rightPointIndex];
 
-                Color color1 = VertexColorFromTriangle(
-                    vertexPositions[currentPointIndex],
-                    vertexPositions[topPointIndex],
-                    vertexPositions[topRightPointIndex]
+                // Color color1 = VertexColorFromTriangle(
+                //     vertexPositions[currentPointIndex],
+                //     vertexPositions[topPointIndex],
+                //     vertexPositions[topRightPointIndex]
+                // );
+                // Color color2 = VertexColorFromTriangle(
+                //     vertexPositions[currentPointIndex],
+                //     vertexPositions[topRightPointIndex],
+                //     vertexPositions[rightPointIndex]
+                // );
+
+                Color color1 = ColorFromHeight(
+                    heightDataNormalized[currentPointIndex],
+                    heightDataNormalized[topPointIndex],
+                    heightDataNormalized[topRightPointIndex]
                 );
-                Color color2 = VertexColorFromTriangle(
-                    vertexPositions[currentPointIndex],
-                    vertexPositions[topRightPointIndex],
-                    vertexPositions[rightPointIndex]
+                Color color2 = ColorFromHeight(
+                    heightDataNormalized[currentPointIndex],
+                    heightDataNormalized[topRightPointIndex],
+                    heightDataNormalized[rightPointIndex]
                 );
 
                 colors[currentTriangleCount + 0] = color1;
@@ -360,7 +373,7 @@ public class Chunk
                     float xPosAdj = (xPos + octaveOffsets[octIndex].x) / mNoiseData.scale * frequency;
                     float zPosAdj = (zPos + octaveOffsets[octIndex].y) / mNoiseData.scale * frequency;
 
-                    float noiseForThisOct = Mathf.PerlinNoise(xPosAdj, zPosAdj);
+                    float noiseForThisOct = Remap(Mathf.PerlinNoise(xPosAdj, zPosAdj), -1, 1, 0, 1);
                     noiseForAllOct += noiseForThisOct * amplitude;
 
                     frequency *= mNoiseData.lacunarity;
@@ -368,33 +381,75 @@ public class Chunk
                 }
 
                 float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
-                float normalizedNoiseCurveAdj = normalizedNoise * sHeightCurve.Evaluate(normalizedNoise);
                 ChunkManager.allpoints.Add(normalizedNoise);
-                heightData[currentIndex] = normalizedNoiseCurveAdj * sHeightMultiplier;
+                heightDataNormalized[currentIndex] = normalizedNoise;
             }
         }
     }
-    Color VertexColorFromTriangle(Vector3 point1, Vector3 point2, Vector3 point3)
+    void MakeColorData()
     {
-        float midPointY = (point1.y + point2.y + point3.y) / 3;
-        float midPointYNormalized = Remap(midPointY, 0, sHeightMultiplier, 0, 1);
-        // Debug.Log("midpointNormalize: " + midPointYNormalized);
+
+    }
+    void HeightDataCurveAdj()
+    {
+
+    }
+    static void MakeStaticColors()
+    {
+        sColorBank = new Color[8];
+        sColorBank[0] = Color.red; // deep water
+        sColorBank[1] = Color.white; // shallow water
+        sColorBank[2] = Color.black; // sand
+        sColorBank[3] = Color.cyan; // shallow grass
+        sColorBank[4] = Color.blue; // deep grass
+
+        sColorBank[5] = Color.green; // shallow mountian
+        sColorBank[6] = Color.gray; // deep mountain
+        sColorBank[7] = Color.magenta; // snow
+    }
+    Color ColorFromHeight(float h1, float h2, float h3)
+    {
+        float midPoint = (h1 + h2 + h3) / 3;
+
+        float mean = 0.7325492f;
+        float stdDevi = 0.04852225f;
+        float z10 = -1.282f;
+        float z20 = -0.842f;
+        float z25 = -0.674f;
+        // float z30 = -0.524f;
+        // float z40 = -0.253f;
+        float z50 = 0f;
+        float z60 = +0.253f;
+        float z70 = +0.524f;
+        // float z80 = +0.842f;
+        float z90 = +1.282f;
 
         Color color;
-        if (midPointYNormalized < 0.2f)
-            color = new Color(0, 0.2f, 0.8f);
-        else if (midPointYNormalized < 0.24f)
-            color = new Color(0.7f, 0.5f, 0.5f);
-        else if (midPointYNormalized < 0.35f)
-            color = new Color(0.2f, 0.8f, 0.2f);
-        else if (midPointYNormalized < 0.5f)
-            color = new Color(0.4f, 0.1f, 0.1f);
+        float currZ = (midPoint - mean) / stdDevi;
+
+        if(currZ < z10)
+            color = sColorBank[0];
+        else if(currZ < z20)
+            color = sColorBank[1];
+        else if(currZ < z25)
+            color = sColorBank[2];
+        else if(currZ < z50)
+            color = sColorBank[3];
+        else if(currZ < z60)
+            color = sColorBank[4];
+        else if(currZ < z70)
+            color = sColorBank[5];
+        else if(currZ < z90)
+            color = sColorBank[6];
         else
-            color = new Color(0.8f, 0.8f, 0.8f);
+            color = sColorBank[7];
 
         return color;
+
     }
+
     //----------------------------------------------------------------------------------------//
+
     static float CalculateMaxNoiseHeight()
     {
         float maxHeight = 0;
@@ -412,3 +467,38 @@ public class Chunk
         return targetFrom + (source - sourceFrom) * (targetTo - targetFrom) / (sourceTo - sourceFrom);
     }
 }
+/*
+p = 0.00 => z = -∞
+
+p = 0.05 => z = -1.645
+
+p = 0.10 => z = -1.282
+p = 0.15 => z = -1.036
+
+p = 0.20 => z = -0.842
+p = 0.25 => z = -0.674
+
+p = 0.30 => z = -0.524
+p = 0.35 => z = -0.385
+
+p = 0.40 => z = -0.253
+p = 0.45 => z = -0.126
+
+p = 0.50 => z = -0
+
+p = 0.55 => z = +0.126
+p = 0.60 => z = +0.253
+
+p = 0.65 => z = +0.385
+p = 0.70 => z = +0.524
+
+p = 0.75 => z = +0.674
+p = 0.80 => z = +0.842
+
+p = 0.85 => z = +1.036
+p = 0.90 => z = +1.282
+
+p = 0.95 => z = +1.645
+
+p = 1.00 => z = +∞
+*/
