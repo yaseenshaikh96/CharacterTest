@@ -7,12 +7,14 @@ public class TerrainManager_Script : MonoBehaviour
     [SerializeField] private ChunkManager chunkManager;
     [SerializeField] private TerrainDynamicLoad terrainDynamicLoad;
     [SerializeField] private TreeManager treeManager;
+    [SerializeField] private ChunkColor_Script chunkColor_Script;
 
     void Start()
     {
         chunkManager.enabled = true;
         terrainDynamicLoad.enabled = true;
         treeManager.enabled =true;
+        chunkColor_Script.enabled = true;
     }
 
 }

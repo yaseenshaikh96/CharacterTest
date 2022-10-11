@@ -397,15 +397,15 @@ public class Chunk
     static void MakeStaticColors()
     {
         sColorBank = new Color[8];
-        sColorBank[0] = Color.red; // deep water
-        sColorBank[1] = Color.white; // shallow water
-        sColorBank[2] = Color.black; // sand
-        sColorBank[3] = Color.cyan; // shallow grass
-        sColorBank[4] = Color.blue; // deep grass
+        sColorBank[0] = new Color( 0.12f,0.11f,0.79f ); // deep water
+        sColorBank[1] = new Color(0.25f,0.42f,0.74f); // shallow water
+        sColorBank[2] =  new  Color(0.83f,0.88f,0.13f); // sand
+        sColorBank[3] = new Color(0.22f,0.88f,0.13f); // shallow grass
+        sColorBank[4] = new Color(0.14f,0.68f,0.07f); // deep grass
 
-        sColorBank[5] = Color.green; // shallow mountian
-        sColorBank[6] = Color.gray; // deep mountain
-        sColorBank[7] = Color.magenta; // snow
+        sColorBank[5] = new Color(0.68f,0.31f,0.07f); // shallow mountian
+        sColorBank[6] = new Color(0.49f,0.24f,0.06f); // deep mountain
+        sColorBank[7] = new Color(0.8f, 0.8f, 0.9f); // snow
     }
     Color ColorFromHeight(float h1, float h2, float h3)
     {
@@ -420,10 +420,11 @@ public class Chunk
         // float z40 = -0.253f;
         float z50 = 0f;
         float z60 = +0.253f;
+        float z65 = +0.385f;
         float z70 = +0.524f;
-        // float z80 = +0.842f;
+        float z80 = +0.842f;
         float z90 = +1.282f;
-
+        float z95 = +1.645f;
         Color color;
         float currZ = (midPoint - mean) / stdDevi;
 
@@ -435,11 +436,11 @@ public class Chunk
             color = sColorBank[2];
         else if(currZ < z50)
             color = sColorBank[3];
-        else if(currZ < z60)
+        else if(currZ < z65)
             color = sColorBank[4];
-        else if(currZ < z70)
+        else if(currZ < z80)
             color = sColorBank[5];
-        else if(currZ < z90)
+        else if(currZ < z95)
             color = sColorBank[6];
         else
             color = sColorBank[7];
