@@ -381,7 +381,7 @@ public class Chunk
                 }
 
                 float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
-                ChunkManager.allpoints.Add(normalizedNoise);
+                // ChunkManager.allpoints.Add(normalizedNoise);
                 heightDataNormalized[currentIndex] = normalizedNoise;
             }
         }
@@ -419,11 +419,11 @@ public class Chunk
         // float z30 = -0.524f;
         // float z40 = -0.253f;
         float z50 = 0f;
-        float z60 = +0.253f;
+        // float z60 = +0.253f;
         float z65 = +0.385f;
-        float z70 = +0.524f;
+        // float z70 = +0.524f;
         float z80 = +0.842f;
-        float z90 = +1.282f;
+        // float z90 = +1.282f;
         float z95 = +1.645f;
         Color color;
         float currZ = (midPoint - mean) / stdDevi;

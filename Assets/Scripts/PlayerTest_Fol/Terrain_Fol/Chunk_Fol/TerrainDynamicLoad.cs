@@ -41,10 +41,10 @@ public class TerrainDynamicLoad : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("T: " + (Time.time - chunk.Value.timeWhenCreated));
+                    // Debug.Log("T: " + (Time.time - chunk.Value.timeWhenCreated));
                     if (Time.time - chunk.Value.timeWhenCreated > 1)
                     {
-                        Debug.Log("Redoing");
+                        // Debug.Log("Redoing");
                         chunk.Value.timeWhenCreated = Time.time;
                         ThreadStart threadStart = new ThreadStart(chunk.Value.Generate);
                         Thread thread = new Thread(threadStart);
