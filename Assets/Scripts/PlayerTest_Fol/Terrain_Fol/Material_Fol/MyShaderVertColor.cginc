@@ -16,6 +16,9 @@ struct v2f
     LIGHTING_COORDS(3,4)
     fixed3 normal : TEXCOORD5;
     fixed3 wPos : TEXCOORD6;
+// #ifdef BASE_PASS
+    // SHADOW_COORDS(7)
+// #endif
     fixed4 vertColor : COLOR;
 };
 sampler2D _MainTex;
@@ -32,10 +35,13 @@ v2f vert (appdata v)
     o.uv = TRANSFORM_TEX(v.uv, _MainTex);
     o.normal = UnityObjectToWorldNormal(v.normal);
     o.wPos = mul(unity_ObjectToWorld, v.vertex);
+// #ifdef BASE_PASS
+//     TRANSFER_SHADOW(o)
+// #endif    
     o.vertColor = v.vertColor;
     UNITY_TRANSFER_FOG(o,o.vertex);
     TRANSFER_VERTEX_TO_FRAGMENT(o); // lighting
-    return o;
+    return o; 
 }
 fixed4 frag (v2f i) : SV_Target
 {
@@ -69,5 +75,9 @@ fixed4 frag (v2f i) : SV_Target
     output = output + fernel;
     #endif
 
+// #ifdef BASE_PASS
+//     fixed shadow = SHADOW_ATTENUATION(i);
+//     output *= shadow;
+// #endif
     return saturate(output);
 }

@@ -21,6 +21,7 @@ Shader "Unlit/VertexColor_Shader"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            // #pragma multi_compile_fwdbase // nolightmap nodirlightmap nodynlightmap
 
             #define BASE_PASS
 
@@ -40,5 +41,6 @@ Shader "Unlit/VertexColor_Shader"
             #include "MyShaderVertColor.cginc"
             ENDCG
         }
+        UsePass "Legacy Shaders/VertexLit/SHADOWCASTER"
     }
 }

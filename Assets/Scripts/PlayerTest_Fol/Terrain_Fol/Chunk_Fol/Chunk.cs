@@ -381,7 +381,7 @@ public class Chunk
                 }
 
                 float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
-                // ChunkManager.allpoints.Add(normalizedNoise);
+                ChunkManager.allpoints.Add(normalizedNoise);
                 heightDataNormalized[currentIndex] = normalizedNoise;
             }
         }

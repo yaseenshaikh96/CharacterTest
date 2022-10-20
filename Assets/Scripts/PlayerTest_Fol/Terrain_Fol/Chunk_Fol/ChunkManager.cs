@@ -122,25 +122,38 @@ public class ChunkManager : MonoBehaviour
         stdDevi /= allpoints.Count;
         stdDevi = Mathf.Sqrt(stdDevi);
 
-        float z = -2.57f;//-0.82f;// -1.28f;
-        float percentile10thPoint = mean + (z * stdDevi);
-        Debug.Log("Mean: " + mean + ", stdDevi: " + stdDevi + ", percentile10thPoint: " + percentile10thPoint);
+        Debug.Log("Mean: " + mean + ", stdDevi: " + stdDevi);
 
+        float z10 = -1.282f;
+        float z20 = -0.842f;
+        float z25 = -0.674f;
+        // float z30 = -0.524f;
+        // float z40 = -0.253f;
+        float z50 = 0f;
+        // float z60 = +0.253f;
+        float z65 = +0.385f;
+        // float z70 = +0.524f;
+        float z80 = +0.842f;
+        // float z90 = +1.282f;
+        float z95 = +1.645f;
 
+        float point10 = mean + (z10 * stdDevi);
+        float point20 = mean + (z20 * stdDevi);
+        float point25 = mean + (z25 * stdDevi);
+        float point50 = mean + (z50 * stdDevi);
+        float point65 = mean + (z65 * stdDevi);
+        float point80 = mean + (z80 * stdDevi);
+        float point95 = mean + (z95 * stdDevi);
+        Debug.Log("point10: " + point10);
+        Debug.Log("point20: " + point20);
+        Debug.Log("point25: " + point25);
+        Debug.Log("point50: " + point50);
+        Debug.Log("point65: " + point65);
+        Debug.Log("point80: " + point80);
+        Debug.Log("point95: " + point95);
         /*
-        Debug.Log(
-            $"total Points: {allCount}" +
-            $"0.0-0.1: {category01}, {100 * (float)category01 / allCount}% \n" +
-            $"0.1-0.2: {category02}, {100 * (float)category02 / allCount}% \n" +
-            $"0.2-0.3: {category03}, {100 * (float)category03 / allCount}% \n" +
-            $"0.3-0.4: {category04}, {100 * (float)category04 / allCount}% : {category045}, {100 * (float)category045 / allCount}% \n" +
-            $"0.4-0.5: {category05}, {100 * (float)category05 / allCount}% : {category055}, {100 * (float)category055 / allCount}% \n" +
-            $"0.5-0.6: {category06}, {100 * (float)category06 / allCount}% : {category065}, {100 * (float)category065 / allCount}% \n" +
-            $"0.6-0.7: {category07}, {100 * (float)category07 / allCount}% \n" +
-            $"0.7-0.8: {category08}, {100 * (float)category08 / allCount}% \n" +
-            $"0.8-0.9: {category09}, {100 * (float)category09 / allCount}% \n" +
-            $"0.9-1.0: {category10}, {100 * (float)category10 / allCount}% \n"
-        );*/
+            10, 20, 25, 50, 65, 80, 95
+        */
     }
 
     void MakeBigSquareEditorVer()
