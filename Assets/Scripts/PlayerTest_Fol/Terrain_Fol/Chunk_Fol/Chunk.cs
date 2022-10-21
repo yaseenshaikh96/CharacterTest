@@ -30,6 +30,7 @@ public class Chunk
     public Vector3 mChunkPos { get; private set; }
     public float timeWhenCreated;
     //---------------------------------------------------------------------------------//
+    AnimationCurve mHeightCurve;
     List<GameObject> spawnableGOs;
     GameObject waterParent;
     Vector3[] vertexPositions;
@@ -80,6 +81,8 @@ public class Chunk
         mWorldPos = chunkPos * sChunkSize;
         mChunkPos = chunkPos;
 
+        mHeightCurve = new AnimationCurve(sHeightCurve.keys);
+
         heightDataLoaded = false;
         gameObjectMade = false;
 
@@ -120,7 +123,7 @@ public class Chunk
 
                 float xPos = ((float)(xIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
-                float yPos = heightDataNormalized[currentIndex] * sHeightMultiplier; // heightCure.Evaluate();
+                float yPos = mHeightCurve.Evaluate(heightDataNormalized[currentIndex]) * sHeightMultiplier; // heightCure.Evaluate();
 
                 vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + mWorldPos;
             }
@@ -238,7 +241,11 @@ public class Chunk
         waterGO.transform.Rotate(Vector3.right * 90);
         waterGO.transform.localScale = Vector3.one * sChunkSize;
         waterGO.transform.parent = waterParent.transform;
-        waterGO.transform.localPosition = new Vector3(sChunkSize / 2, sHeightMultiplier * 0.2f, sChunkSize / 2);
+        waterGO.transform.localPosition = new Vector3(
+            sChunkSize / 2,
+            sHeightMultiplier * mHeightCurve.Evaluate((0.682520f + 0.700290f) / 2),
+            sChunkSize / 2
+        );
         waterGO.GetComponent<Renderer>().material = sWaterMaterial;
     }
     void FlatMesh()
@@ -381,7 +388,7 @@ public class Chunk
                 }
 
                 float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
-                ChunkManager.allpoints.Add(normalizedNoise);
+                // ChunkManager.allpoints.Add(normalizedNoise);
                 heightDataNormalized[currentIndex] = normalizedNoise;
             }
         }
@@ -397,14 +404,14 @@ public class Chunk
     static void MakeStaticColors()
     {
         sColorBank = new Color[8];
-        sColorBank[0] = new Color( 0.12f,0.11f,0.79f ); // deep water
-        sColorBank[1] = new Color(0.25f,0.42f,0.74f); // shallow water
-        sColorBank[2] =  new  Color(0.83f,0.88f,0.13f); // sand
-        sColorBank[3] = new Color(0.22f,0.88f,0.13f); // shallow grass
-        sColorBank[4] = new Color(0.14f,0.68f,0.07f); // deep grass
+        sColorBank[0] = new Color(0.12f, 0.11f, 0.79f); // deep water
+        sColorBank[1] = new Color(0.25f, 0.42f, 0.74f); // shallow water
+        sColorBank[2] = new Color(0.83f, 0.88f, 0.13f); // sand
+        sColorBank[3] = new Color(0.22f, 0.88f, 0.13f); // shallow grass
+        sColorBank[4] = new Color(0.14f, 0.68f, 0.07f); // deep grass
 
-        sColorBank[5] = new Color(0.68f,0.31f,0.07f); // shallow mountian
-        sColorBank[6] = new Color(0.49f,0.24f,0.06f); // deep mountain
+        sColorBank[5] = new Color(0.68f, 0.31f, 0.07f); // shallow mountian
+        sColorBank[6] = new Color(0.49f, 0.24f, 0.06f); // deep mountain
         sColorBank[7] = new Color(0.8f, 0.8f, 0.9f); // snow
     }
     Color ColorFromHeight(float h1, float h2, float h3)
@@ -414,7 +421,8 @@ public class Chunk
         float mean = 0.7325492f;
         float stdDevi = 0.04852225f;
         float z10 = -1.282f;
-        float z20 = -0.842f;
+        float z15 = -1.036f;
+        // float z20 = -0.842f;
         float z25 = -0.674f;
         // float z30 = -0.524f;
         // float z40 = -0.253f;
@@ -428,19 +436,19 @@ public class Chunk
         Color color;
         float currZ = (midPoint - mean) / stdDevi;
 
-        if(currZ < z10)
+        if (currZ < z10)
             color = sColorBank[0];
-        else if(currZ < z20)
+        else if (currZ < z15)
             color = sColorBank[1];
-        else if(currZ < z25)
+        else if (currZ < z25)
             color = sColorBank[2];
-        else if(currZ < z50)
+        else if (currZ < z50)
             color = sColorBank[3];
-        else if(currZ < z65)
+        else if (currZ < z65)
             color = sColorBank[4];
-        else if(currZ < z80)
+        else if (currZ < z80)
             color = sColorBank[5];
-        else if(currZ < z95)
+        else if (currZ < z95)
             color = sColorBank[6];
         else
             color = sColorBank[7];

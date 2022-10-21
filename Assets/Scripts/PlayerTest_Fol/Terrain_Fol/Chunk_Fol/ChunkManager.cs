@@ -13,7 +13,7 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField, Range(2, 50)] private int pointsPerChunk;
     [SerializeField, Range(5, 100)] private float chunkSize; // in world pos
-    [SerializeField, Range(5, 500)] private float heightMultiplier;
+    [SerializeField, Range(5, 700)] private float heightMultiplier;
     [SerializeField] private MeshType meshType;
     [SerializeField] private Material meshMaterial;
     [SerializeField] private Material waterMaterial;
@@ -125,7 +125,8 @@ public class ChunkManager : MonoBehaviour
         Debug.Log("Mean: " + mean + ", stdDevi: " + stdDevi);
 
         float z10 = -1.282f;
-        float z20 = -0.842f;
+        float z15 = -1.036f;
+        // float z20 = -0.842f;
         float z25 = -0.674f;
         // float z30 = -0.524f;
         // float z40 = -0.253f;
@@ -138,14 +139,14 @@ public class ChunkManager : MonoBehaviour
         float z95 = +1.645f;
 
         float point10 = mean + (z10 * stdDevi);
-        float point20 = mean + (z20 * stdDevi);
+        float point15 = mean + (z15 * stdDevi);
         float point25 = mean + (z25 * stdDevi);
         float point50 = mean + (z50 * stdDevi);
         float point65 = mean + (z65 * stdDevi);
         float point80 = mean + (z80 * stdDevi);
         float point95 = mean + (z95 * stdDevi);
         Debug.Log("point10: " + point10);
-        Debug.Log("point20: " + point20);
+        Debug.Log("point15: " + point15);
         Debug.Log("point25: " + point25);
         Debug.Log("point50: " + point50);
         Debug.Log("point65: " + point65);
