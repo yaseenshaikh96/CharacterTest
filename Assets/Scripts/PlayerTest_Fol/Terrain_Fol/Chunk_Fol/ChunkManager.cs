@@ -45,12 +45,9 @@ public class ChunkManager : MonoBehaviour
     {
         if (clear)
         {
-            List<Transform> children = new List<Transform>();
             foreach (Transform child in TestParentGO.transform)
-                children.Add(child);
-            foreach(Transform child in TestParentGO.transform)
                 DestroyImmediate(child.gameObject);
-                
+
             clear = false;
         }
         if (update)
@@ -66,10 +63,10 @@ public class ChunkManager : MonoBehaviour
                 noiseData,
                 heightMultiplier, heightCurve
             );
-            Tree.Init(GameObject.CreatePrimitive(PrimitiveType.Cube));
-
+            if(!Tree.isUpdated)
+                Tree.Init(UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube));
             MakeBigSquareEditorVer();
-            PointsStuff();
+            // PointsStuff();
         }
     }
     void PointsStuff()

@@ -6,9 +6,15 @@ public enum MeshType
 {
     flat, smooth
 }
-
 public class Chunk
 {
+    public static float sLayerEndDeepWater;
+    public static float sLayerEndShallowWater;
+    public static float sLayerEndSand;
+    public static float sLayerEndLightGrass;
+    public static float sLayerEndDarkGrass;
+    public static float sLayerEndLightMountain;
+    public static float sLayerEndDarkMountain;
     public static GameObject sPlayerGO { get; private set; }
     public static GameObject sParentGO { get; private set; }
     public static LayerMask sGroundLayer { get; private set; }
@@ -74,6 +80,15 @@ public class Chunk
 
         sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
+
+        sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
+        sLayerEndShallowWater = sHeightCurve.Evaluate(0.682520f);
+        sLayerEndSand = sHeightCurve.Evaluate(0.700290f);
+        sLayerEndLightGrass = sHeightCurve.Evaluate(0.733372f);
+        sLayerEndDarkGrass = sHeightCurve.Evaluate(0.752275f);
+        sLayerEndLightMountain = sHeightCurve.Evaluate(0.774707f);
+        sLayerEndDarkMountain = sHeightCurve.Evaluate(0.814128f);
+
     }
     public Chunk(Vector3 chunkPos)
     {
@@ -89,10 +104,14 @@ public class Chunk
     }
     public void Delete()
     {
-        foreach (var spawn in spawnableGOs)
-            UnityEngine.GameObject.Destroy(spawn);
+        for (int i = spawnableGOs.Count - 1; i > -1; i--)
+        {
+            UnityEngine.GameObject.Destroy(spawnableGOs[i]);
+        }
+
         UnityEngine.GameObject.Destroy(waterParent);
         UnityEngine.GameObject.Destroy(meshGO);
+
     }
     ~Chunk()
     {
@@ -177,7 +196,7 @@ public class Chunk
         Random.InitState(mNoiseData.seed);
         for (int i = 0; i < spawnablePoints.Length; i++)
         {
-            if (spawnablePoints[i] && Random.value < 0.2f)
+            if (spawnablePoints[i]) //&& Random.value < 0.2f)
             {
                 Tree tree = new Tree(vertexPositions[i], meshGO);
             }
@@ -205,10 +224,13 @@ public class Chunk
                 neighbourPointsY[7] = vertexPositions[currentIndex + sPointsPerChunk - 1].y;
 
                 float deviation = FindDeviation(neighbourPointsY);
+                // Debug.Log("currentpoint.y: " + currentPoint.y + 
+                //     ", sand: " + layerEndSand * sHeightMultiplier +
+                //     ", darkGrass: " + layerEndDarkGrass * sHeightMultiplier);
                 if (
-                    deviation < 0.5f &&
-                    currentPoint.y > 0.22f * sHeightMultiplier &&
-                    currentPoint.y < 0.28f * sHeightMultiplier
+                    deviation < 2f &&
+                    currentPoint.y > sLayerEndSand * sHeightMultiplier &&
+                    currentPoint.y < sLayerEndDarkGrass * sHeightMultiplier
                 )
                     spawnablePoints[currentIndex] = true;
                 else
@@ -225,7 +247,7 @@ public class Chunk
             avg /= values.Length;
             float deviation = 0;
             for (int i = 0; i < values.Length; i++)
-                deviation = (values[i] - avg) * (values[i] - avg);
+                deviation += (values[i] - avg) * (values[i] - avg);
 
             return Mathf.Sqrt(deviation / values.Length);
         }
@@ -243,7 +265,7 @@ public class Chunk
         waterGO.transform.parent = waterParent.transform;
         waterGO.transform.localPosition = new Vector3(
             sChunkSize / 2,
-            sHeightMultiplier * mHeightCurve.Evaluate((0.682520f + 0.700290f) / 2),
+            sHeightMultiplier * ((sLayerEndShallowWater + sLayerEndSand) / 2),
             sChunkSize / 2
         );
         waterGO.GetComponent<Renderer>().material = sWaterMaterial;
