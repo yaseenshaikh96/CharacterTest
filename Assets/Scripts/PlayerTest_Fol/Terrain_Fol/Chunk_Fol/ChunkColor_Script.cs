@@ -5,28 +5,28 @@ using UnityEngine;
 public class ChunkColor_Script : MonoBehaviour
 {
     ChunkLayers chunkLayers;
-    void Start()
-    {
-        float[] sizes = { 0.5f, 0.5f};
-        float[] values = { 0.1f, 0.9f };
-        Color[] colors = { Color.red, Color.black };
+    // void Start()
+    // {
+    //     float[] sizes = { 0.5f, 0.5f};
+    //     float[] values = { 0.1f, 0.9f };
+    //     Color[] colors = { Color.red, Color.black };
 
-        chunkLayers = new ChunkLayers(2, sizes, values, colors);
+    //     chunkLayers = new ChunkLayers(2, sizes, values, colors);
 
-        Draw();
-    }
-    void Draw()
-    {
-        float step = 0.01f;
-        for (float i = 0; i < 1; i += step)
-        {
-            float value = chunkLayers.bezierurve.Evaluate(i);
+    //     Draw();
+    // }
+    // void Draw()
+    // {
+    //     float step = 0.01f;
+    //     for (float i = 0; i < 1; i += step)
+    //     {
+    //         float value = chunkLayers.bezierurve.Evaluate(i);
         
-            GameObject go= UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-            Debug.Log(" i: " + i + ", v: " + value);
-            go.transform.position = (new Vector3(i, value, 0)) * 100;
-        }
-    }
+    //         GameObject go= UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
+    //         Debug.Log(" i: " + i + ", v: " + value);
+    //         go.transform.position = (new Vector3(i, value, 0)) * 100;
+    //     }
+    // }
 }
 
 public class ChunkLayers

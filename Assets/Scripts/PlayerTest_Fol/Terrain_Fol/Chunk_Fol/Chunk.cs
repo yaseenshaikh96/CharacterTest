@@ -32,12 +32,14 @@ public class Chunk
     //---------------------------------------------------------------------------------//
     public bool heightDataLoaded { get; private set; }
     public bool gameObjectMade { get; private set; }
+    public bool hasCollider { get; private set; }
     public Vector3 mWorldPos { get; private set; } // unique ID
+    public Vector3 mWorldPosCentered { get; private set; } 
     public Vector3 mChunkPos { get; private set; }
     public float timeWhenCreated;
     //---------------------------------------------------------------------------------//
     AnimationCurve mHeightCurve;
-    List<GameObject> spawnableGOs;
+    List<Tree> spawnableGOs;
     GameObject waterParent;
     Vector3[] vertexPositions;
     bool[] spawnablePoints;
@@ -94,19 +96,21 @@ public class Chunk
     {
         timeWhenCreated = Time.time;
         mWorldPos = chunkPos * sChunkSize;
+        mWorldPosCentered = new Vector3(mWorldPos.x + (sChunkSize/2), 0 ,mWorldPos.z + (sChunkSize/2));
         mChunkPos = chunkPos;
 
         mHeightCurve = new AnimationCurve(sHeightCurve.keys);
 
         heightDataLoaded = false;
         gameObjectMade = false;
+        hasCollider = false;
 
     }
     public void Delete()
     {
         for (int i = spawnableGOs.Count - 1; i > -1; i--)
         {
-            UnityEngine.GameObject.Destroy(spawnableGOs[i]);
+            UnityEngine.GameObject.Destroy(spawnableGOs[i].mTreeGO);
         }
 
         UnityEngine.GameObject.Destroy(waterParent);
@@ -125,7 +129,7 @@ public class Chunk
         triangles = new int[sTriangleIndexCount];
         colors = new Color[sTriangleIndexCount];
         spawnablePoints = new bool[sVerticesPosIndexCount];
-        spawnableGOs = new List<GameObject>();
+        spawnableGOs = new List<Tree>();
 
         if (sMeshType == MeshType.flat)
             vertices = new Vector3[sTriangleIndexCount];
@@ -182,8 +186,9 @@ public class Chunk
 
         mMeshCollider = meshGO.AddComponent<MeshCollider>();
         mMeshCollider.sharedMesh = mMeshFilter.sharedMesh;
+        hasCollider = true;
 
-        meshGO.layer = 8; //TODO:
+        meshGO.layer = sGroundLayer.value >> 5;
 
         MakeWaterMesh();
         SpawnSpawnable();
@@ -191,14 +196,39 @@ public class Chunk
 
     }
     //-------------------------------------------------------------------------------//
+    public void AddCollider()
+    {
+        if(!hasCollider)
+        {
+            mMeshCollider.enabled = true; 
+            foreach(var spawns in spawnableGOs)
+            {
+                spawns.AddCollider();
+            }
+            hasCollider = true;
+        }
+    }
+    public void RemoveCollider()
+    {
+        if(hasCollider)
+        {
+            mMeshCollider.enabled = false; 
+            foreach(var spawns in spawnableGOs)
+            {
+                spawns.RemoveCollider();
+            }
+            hasCollider = false;
+        }
+    }
     void SpawnSpawnable()
     {
         Random.InitState(mNoiseData.seed);
         for (int i = 0; i < spawnablePoints.Length; i++)
         {
-            if (spawnablePoints[i]) //&& Random.value < 0.2f)
+            if (spawnablePoints[i] && Random.value < 0.2f)
             {
                 Tree tree = new Tree(vertexPositions[i], meshGO);
+                spawnableGOs.Add(tree);
             }
         }
     }
@@ -259,7 +289,7 @@ public class Chunk
 
         waterParent.transform.position = mWorldPos;
         GameObject waterGO = UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Quad);
-
+        waterGO.GetComponent<Collider>().enabled = false;
         waterGO.transform.Rotate(Vector3.right * 90);
         waterGO.transform.localScale = Vector3.one * sChunkSize;
         waterGO.transform.parent = waterParent.transform;

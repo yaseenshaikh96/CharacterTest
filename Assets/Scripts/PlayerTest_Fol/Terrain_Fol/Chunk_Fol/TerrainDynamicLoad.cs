@@ -7,30 +7,45 @@ public class TerrainDynamicLoad : MonoBehaviour
 {
     [SerializeField] private GameObject playerGO;
     [SerializeField] private int loadRadius;
+    [SerializeField] private float colliderRadius;
 
+    System.Action ptrToLoadColliderFunc;
+
+    //---------------------------------------------------------------------
+    int xPosPlayerInChunk, zPosPlayerInChunk;
+    Vector3 playerWorldPos;
     Dictionary<Vector3, Chunk> loadedChunks, newLoadedChunks;
     void Start()
     {
         loadedChunks = new Dictionary<Vector3, Chunk>();
         newLoadedChunks = new Dictionary<Vector3, Chunk>();
+
+            playerWorldPos = playerGO.transform.position;
+            xPosPlayerInChunk = Mathf.RoundToInt(playerWorldPos.x / Chunk.sChunkSize);
+            zPosPlayerInChunk = Mathf.RoundToInt(playerWorldPos.z / Chunk.sChunkSize);
+
+            LoadChunksMultiThreaded();
     }
 
     float timeSinceLastLoaded = 0;
-    const float timeBtnLoad = 0.5f; // sec
+    const float timeBtnLoad = 1f; // sec
     void Update()
     {
         timeSinceLastLoaded += Time.deltaTime;
         if (timeSinceLastLoaded > timeBtnLoad)
         {
             timeSinceLastLoaded = 0;
+
+            playerWorldPos = playerGO.transform.position;
+            xPosPlayerInChunk = Mathf.RoundToInt(playerWorldPos.x / Chunk.sChunkSize);
+            zPosPlayerInChunk = Mathf.RoundToInt(playerWorldPos.z / Chunk.sChunkSize);
+
             LoadChunksMultiThreaded();
+            LoadColliders();
         }
     }
     void LoadChunksMultiThreaded()
     {
-        int xPosPlayerInChunk = Mathf.RoundToInt(playerGO.transform.position.x / Chunk.sChunkSize);
-        int zPosPlayerInChunk = Mathf.RoundToInt(playerGO.transform.position.z / Chunk.sChunkSize);
-
         foreach (var chunk in loadedChunks)
         {
             if (!chunk.Value.gameObjectMade)
@@ -92,8 +107,43 @@ public class TerrainDynamicLoad : MonoBehaviour
         loadedChunks = newLoadedChunks;
 
     }
+    void LoadColliders()
+    {
+        foreach (var chunk in loadedChunks)
+        {
+            
+            Vector2 chunkWorldpos2D = new Vector2(chunk.Value.mWorldPosCentered.x,chunk.Value.mWorldPosCentered.z);
+            Vector3 playerWorldPos2D = new Vector2(playerWorldPos.x, playerWorldPos.z);
+            if (Vector2.Distance(chunkWorldpos2D, playerWorldPos2D) > colliderRadius)
+            {
+                chunk.Value.RemoveCollider();
+            }
+            else
+                chunk.Value.AddCollider();
+        }
+
+    }
 }
 /*
+        Vector3 playerPosInChunk = new Vector3(xPosPlayerInChunk, 0, zPosPlayerInChunk);
+        foreach (var chunk in loadedChunks)
+        {
+            chunk.Value.RemoveCollider();
+        }
+        for (int x = -colliderRadius; x < colliderRadius; x++)
+        {
+            for (int z = -colliderRadius; z < colliderRadius; z++)
+            {
+                Vector3 currentChunkPos = playerPosInChunk + new Vector3(x, 0, z);
+                Chunk currentChunk;
+                loadedChunks.TryGetValue(currentChunkPos, out currentChunk);
+                if(currentChunk != null)
+                {   
+                    currentChunk.AddCollider();
+                }
+            }
+        }
+
     private Dictionary<Vector3, Chunk> loadedChunks;
     void LoadChunks()
     {

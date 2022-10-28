@@ -5,15 +5,18 @@ using UnityEngine;
 public class Tree
 {
     public static bool isUpdated = false;
-    public static GameObject[] sTreePrefabs;
+    static GameObject[] sTreePrefabs;
+    static LayerMask sGroundLayer;
     //------------------------------------------------------------------------------------------//
     Vector3 mWorldPos;
     public GameObject mTreeGO, mParentGO;
+    Collider mCollider;
     int mTreeIndex;
 
     //------------------------------------------------------------------------------------------//
-    public static void Init(params GameObject[] treePrefabs)
+    public static void Init(LayerMask groundLayer, params GameObject[] treePrefabs)
     {
+        sGroundLayer = groundLayer;
         sTreePrefabs = treePrefabs;
         isUpdated = true;
     }
@@ -22,16 +25,13 @@ public class Tree
         mWorldPos = worldPos;
         mParentGO = parentGO;
 
-        // mTreeIndex = Random.Range(0, sTreePrefabs.Length);
-        mTreeIndex = 0;
+        mTreeIndex = Random.Range(0, sTreePrefabs.Length);
+        // mTreeIndex = 0;
 
         // if(sTreePrefabs.Length != 0)
         mTreeGO = UnityEngine.GameObject.Instantiate(sTreePrefabs[mTreeIndex], mWorldPos, Quaternion.identity);
-        // else
-        // {
-        //     mTreeGO = UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        //     mTreeGO.transform.localPosition = mWorldPos;
-        // }
+        mTreeGO.layer = sGroundLayer.value >> 5;
+        mCollider = mTreeGO.GetComponent<Collider>();
         mTreeGO.transform.parent = mParentGO.transform;
     }
     public void Delete()
@@ -43,5 +43,12 @@ public class Tree
         Delete();
     }
     //------------------------------------------------------------------------------------------//
-
+    public void AddCollider()
+    {
+        mCollider.enabled = true;
+    }
+    public void RemoveCollider()
+    {
+        mCollider.enabled = false;
+    }
 }

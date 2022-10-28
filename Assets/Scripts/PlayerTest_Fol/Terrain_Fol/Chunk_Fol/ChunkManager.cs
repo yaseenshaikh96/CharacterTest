@@ -63,8 +63,6 @@ public class ChunkManager : MonoBehaviour
                 noiseData,
                 heightMultiplier, heightCurve
             );
-            if(!Tree.isUpdated)
-                Tree.Init(UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube));
             MakeBigSquareEditorVer();
             // PointsStuff();
         }
