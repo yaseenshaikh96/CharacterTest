@@ -9,8 +9,9 @@ public class PlayerTest_Script : MonoBehaviour
     GameData_Script gameData;
     [SerializeField] private InputManager_Script inputManager_Script;
     [SerializeField] private Player_Script player_Script;
-    [SerializeField] private Camera_Script camera_Script;
+    [SerializeField] private Enemy_Script enemy_Script;
 
+    [SerializeField] private Camera_Script camera_Script;
     [SerializeField] private TerrainManager_Script terrainManager_Script;
     //--------------------------//
 
@@ -23,10 +24,11 @@ public class PlayerTest_Script : MonoBehaviour
         gameData = GameData_Script.instance;
 
         inputManager_Script.enabled = true;
-        player_Script.enabled = true;
-        camera_Script.enabled = true;
+        // player_Script.enabled = true;
+        // camera_Script.enabled = true;
+        enemy_Script.enabled = true;
 
-        terrainManager_Script.enabled = true;
+        // terrainManager_Script.enabled = true;
     }
 
 }
