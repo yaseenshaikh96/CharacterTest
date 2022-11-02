@@ -28,6 +28,9 @@ fixed _AmbientLight;
 fixed _Gloss;
 fixed _Fernel;
 fixed fernel;
+
+fixed _Saturation;
+
 v2f vert (appdata v)
 {
     v2f o;
@@ -61,7 +64,7 @@ fixed4 frag (v2f i) : SV_Target
     fixed specular = saturate(dot(H, N)) * (diffuse > 0);
     specular = pow(specular, glossExp) * (_Gloss * 2);
     
-    output = i.vertColor + _ColorTint;
+    output = (i.vertColor * _Saturation) + _ColorTint;
 
     output = output * diffuse;
     output = output + (specular) * attenuation;

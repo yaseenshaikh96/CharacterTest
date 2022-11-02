@@ -62,6 +62,9 @@ public class Chunk
         float heightMultiplier, AnimationCurve heightCurve
     )
     {
+
+        Random.InitState(noiseData.seed);
+
         sPlayerGO = playerGO;
         sParentGO = parentGO;
         sGroundLayer = groundLayer;

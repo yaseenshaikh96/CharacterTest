@@ -24,11 +24,11 @@ public class PlayerTest_Script : MonoBehaviour
         gameData = GameData_Script.instance;
 
         inputManager_Script.enabled = true;
-        // player_Script.enabled = true;
-        // camera_Script.enabled = true;
-        enemy_Script.enabled = true;
+        player_Script.enabled = true;
+        camera_Script.enabled = true;
+        // enemy_Script.enabled = true;
 
-        // terrainManager_Script.enabled = true;
+        terrainManager_Script.enabled = true;
     }
 
 }

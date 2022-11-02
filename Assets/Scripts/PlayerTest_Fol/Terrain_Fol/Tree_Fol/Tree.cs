@@ -24,12 +24,13 @@ public class Tree
     {
         mWorldPos = worldPos;
         mParentGO = parentGO;
-
         mTreeIndex = Random.Range(0, sTreePrefabs.Length);
         // mTreeIndex = 0;
 
         // if(sTreePrefabs.Length != 0)
-        mTreeGO = UnityEngine.GameObject.Instantiate(sTreePrefabs[mTreeIndex], mWorldPos, Quaternion.identity);
+        float yRotDeg = Random.Range(0, 360);
+        Quaternion treeRot = Quaternion.Euler(0, yRotDeg, 0);
+        mTreeGO = UnityEngine.GameObject.Instantiate(sTreePrefabs[mTreeIndex], mWorldPos, treeRot);
         mTreeGO.layer = sGroundLayer.value >> 5;
         mCollider = mTreeGO.GetComponent<Collider>();
         mTreeGO.transform.parent = mParentGO.transform;

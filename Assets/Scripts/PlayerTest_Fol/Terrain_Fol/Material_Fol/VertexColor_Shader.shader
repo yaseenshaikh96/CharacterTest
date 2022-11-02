@@ -7,6 +7,7 @@ Shader "Unlit/VertexColor_Shader"
         _Gloss("Gloss", Range(0, 1)) = 0.5
         _Fernel("Fernel", Range(0, 1)) = 0.5
         _AmbientLight("Ambient Light", Range(0, 1)) = 0.25
+        _Saturation("Saturation", Range(0, 1)) = 1
 
     }
     SubShader
