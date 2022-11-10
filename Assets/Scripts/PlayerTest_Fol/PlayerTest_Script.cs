@@ -23,12 +23,28 @@ public class PlayerTest_Script : MonoBehaviour
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        inputManager_Script.enabled = true;
-        player_Script.enabled = true;
-        camera_Script.enabled = true;
-        // enemy_Script.enabled = true;
+        bool terrainTest = false;
 
-        terrainManager_Script.enabled = true;
+        if (terrainTest)
+        {
+            inputManager_Script.enabled = true;
+            player_Script.enabled = true;
+            camera_Script.enabled = true;
+            terrainManager_Script.enabled = true;
+
+            enemy_Script.enabled = false;
+        }
+        else
+        {
+            enemy_Script.enabled = true;
+
+            inputManager_Script.enabled = false;
+            player_Script.enabled = false;
+            camera_Script.enabled = false;
+            terrainManager_Script.enabled = false;
+        }
+
+
     }
 
 }

@@ -228,7 +228,7 @@ public class Chunk
         Random.InitState(mNoiseData.seed);
         for (int i = 0; i < spawnablePoints.Length; i++)
         {
-            if (spawnablePoints[i] && Random.value < 0.2f)
+            if (spawnablePoints[i] && Random.value < 0.05f)
             {
                 Tree tree = new Tree(vertexPositions[i], meshGO);
                 spawnableGOs.Add(tree);

@@ -161,7 +161,8 @@ public class ChunkManager : MonoBehaviour
             {
                 for (int z = 0; z < chunksForEditor.GetLength(1); z++)
                 {
-                    DestroyImmediate(chunksForEditor[x, z].meshGO);
+                    if(chunksForEditor[x, z].meshGO != null)
+                        DestroyImmediate(chunksForEditor[x, z].meshGO);
                 }
             }
         }

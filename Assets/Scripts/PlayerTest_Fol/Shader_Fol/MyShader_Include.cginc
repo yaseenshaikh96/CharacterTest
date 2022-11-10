@@ -22,7 +22,8 @@ struct v2f
 sampler2D _MainTex;
 fixed4 _MainTex_ST;
 fixed4 _ColorTint;
-fixed _AmbientLight;
+fixed _AmbientIntensity;
+fixed _Saturation; 
 fixed _Gloss;
 fixed _Fernel;
 fixed fernel;
@@ -58,7 +59,7 @@ fixed4 frag (v2f i) : SV_Target
     fixed specular = saturate(dot(H, N)) * (diffuse > 0);
     specular = pow(specular, glossExp) * (_Gloss * 2);
     
-    output = _ColorTint;
+    output = ((_ColorTint * _Saturation) * (1 - _AmbientIntensity));
 
     output = output * diffuse;
     output = output + (specular) * attenuation;
@@ -67,7 +68,7 @@ fixed4 frag (v2f i) : SV_Target
     fixed fernel = 1 - saturate(dot(N, V));
     fernel = pow(fernel, _Fernel * 10);
     fernel = fernel * _Fernel; 
-    output = output + (_AmbientLight * _ColorTint * attenuation);
+    output = output + (_AmbientIntensity * _ColorTint * attenuation);
     output = output + fernel;
     #endif
 
