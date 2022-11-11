@@ -19,11 +19,11 @@ public class PlayerTest_Script : MonoBehaviour
     {
         // QualitySettings.vSyncCount = 1;
         // Application.targetFrameRate = 30;
-
+ 
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        bool terrainTest = false;
+        bool terrainTest = true;
 
         if (terrainTest)
         {

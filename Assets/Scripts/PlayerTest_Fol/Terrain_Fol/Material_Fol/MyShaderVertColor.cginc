@@ -58,11 +58,11 @@ fixed4 frag (v2f i) : SV_Target
     fixed3 L = normalize(UnityWorldSpaceLightDir(i.wPos));
     fixed3 V = normalize(_WorldSpaceCameraPos - i.wPos);
     fixed3 H =  normalize(L + V); 
-    fixed glossExp = exp2(_Gloss * 20);
+    fixed glossExp = exp2(_Gloss * 10);
 
     fixed diffuse = saturate(dot(N, L)) * attenuation;
     fixed specular = saturate(dot(H, N)) * (diffuse > 0);
-    specular = pow(specular, glossExp) * (_Gloss * 2);
+    specular = pow(specular, glossExp) * (_Gloss * 0.2f);
     
     output = ((i.vertColor * _Saturation) * (1 - _AmbientIntensity));
 

@@ -53,7 +53,7 @@ public class Enemy_AI : MonoBehaviour
         Vector3 moveDirection= playerWorldPos - enemyWorldPosNew;
         moveDirection.y = 0;
         moveDirection = moveDirection.normalized;
-        Move(moveDirection, magnitude);
+        Move(moveDirection, magnitude); 
 
     }
     void Move(Vector3 newDir, float magnitude)

@@ -26,7 +26,7 @@ public class Chunk
     public static float sHeightMultiplier { get; private set; }
     public static AnimationCurve sHeightCurve { get; private set; }
     public static Color[] sColorBank;
-    static NoiseData mNoiseData;
+    static NoiseData mNoiseData; 
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
     //---------------------------------------------------------------------------------//
@@ -351,9 +351,9 @@ public class Chunk
                 colors[currentTriangleCount + 1] = color1;
                 colors[currentTriangleCount + 2] = color1;
 
-                colors[currentTriangleCount + 3] = color2;
-                colors[currentTriangleCount + 4] = color2;
-                colors[currentTriangleCount + 5] = color2;
+                colors[currentTriangleCount + 3] = color1; // color2
+                colors[currentTriangleCount + 4] = color1; // color2
+                colors[currentTriangleCount + 5] = color1; // color2
 
                 // triangle1
                 triangles[currentTriangleCount + 0] = currentTriangleCount + 0;

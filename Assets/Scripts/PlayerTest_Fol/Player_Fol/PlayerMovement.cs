@@ -50,7 +50,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 cameraRight = cameraMain.transform.right;
         Vector3 playerForward = (new Vector3(cameraForward.x, 0, cameraForward.z)).normalized;
         Vector3 playerSideway = (new Vector3(cameraRight.x, 0, cameraRight.z)).normalized;
-
+ 
         Vector3 newPlayerDir;
         if (xAxis == 0 && zAxis == 0)
             newPlayerDir = previousDirOfMotion;
