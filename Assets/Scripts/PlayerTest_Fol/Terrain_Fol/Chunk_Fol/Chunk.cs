@@ -24,13 +24,12 @@ public class Chunk
     public static Material sWaterMaterial { get; private set; }
     public static MeshType sMeshType { get; private set; }
     public static float sHeightMultiplier { get; private set; }
-    public static AnimationCurve sHeightCurve { get; private set; }
-    public static Color[] sColorBank;
+    public static AnimationCurve sHeightCurveRef { get; private set; }
     static NoiseData mNoiseData; 
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
     static float pointHeightMean, pointHeightStdDevi;
-
+    static float waterLayerHeight;
     public static ChunkLayer[] layers;
     //---------------------------------------------------------------------------------//
     public bool heightDataLoaded { get; private set; }
@@ -62,7 +61,7 @@ public class Chunk
         GameObject playerGO, GameObject parentGO, LayerMask groundLayer,
         int pointsPerChunk, float chunkSize, MeshType meshType, Material meshMaterial, Material waterMaterial,
         NoiseData noiseData,
-        float heightMultiplier, AnimationCurve heightCurve,
+        float heightMultiplier, AnimationCurve heightCurveRef,
         ChunkLayer[] _layers
     )
     {
@@ -82,18 +81,17 @@ public class Chunk
         mNoiseData = noiseData;
 
         sHeightMultiplier = heightMultiplier;
-        sHeightCurve = heightCurve;
+        sHeightCurveRef = heightCurveRef;
 
         sMaxNoiseHeight = CalculateMaxNoiseHeight();
 
         sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
 
-        MakeStaticColors();
         CalcMeanAndStdDevi();
         CalcLayerValues();
-        
         layers = _layers;
+        CalcWaterLevel();
     }
     public Chunk(Vector3 chunkPos)
     {
@@ -102,7 +100,7 @@ public class Chunk
         mWorldPosCentered = new Vector3(mWorldPos.x + (sChunkSize/2), 0 ,mWorldPos.z + (sChunkSize/2));
         mChunkPos = chunkPos;
 
-        mHeightCurve = new AnimationCurve(sHeightCurve.keys);
+        mHeightCurve = new AnimationCurve(sHeightCurveRef.keys);
 
         heightDataLoaded = false;
         gameObjectMade = false;
@@ -149,7 +147,9 @@ public class Chunk
 
                 float xPos = ((float)(xIndex) / (sPointsPerChunk - 1)) * sChunkSize;
                 float zPos = ((float)(zIndex) / (sPointsPerChunk - 1)) * sChunkSize;
-                float yPos = mHeightCurve.Evaluate(heightDataNormalized[currentIndex]) * sHeightMultiplier; // heightCure.Evaluate();
+                // float yPos = mHeightCurve.Evaluate(heightDataNormalized[currentIndex]) * sHeightMultiplier; // heightCure.Evaluate();
+
+                float yPos = GetNewHeight(heightDataNormalized[currentIndex]) * sHeightMultiplier;
 
                 vertexPositions[currentIndex] = (new Vector3(xPos, yPos, zPos)) + mWorldPos;
             }
@@ -298,10 +298,16 @@ public class Chunk
         waterGO.transform.parent = waterParent.transform;
         waterGO.transform.localPosition = new Vector3(
             sChunkSize / 2,
-            sHeightMultiplier * ((sLayerEndShallowWater + sLayerEndSand) / 2),
+            sHeightMultiplier * waterLayerHeight,
             sChunkSize / 2
         );
         waterGO.GetComponent<Renderer>().material = sWaterMaterial;
+    }
+    static void CalcWaterLevel()
+    {
+        float layer1hight = sHeightCurveRef.Evaluate(layers[1].GetHeight());
+        float layer2hight = sHeightCurveRef.Evaluate(layers[2].GetHeight());
+        waterLayerHeight = (layer1hight + layer2hight) / 2;
     }
     void FlatMesh()
     {
@@ -426,25 +432,12 @@ public class Chunk
         }
     }
 
-    static void MakeStaticColors()
-    {
-        sColorBank = new Color[8];
-        sColorBank[0] = new Color(0.12f, 0.11f, 0.79f); // deep water
-        sColorBank[1] = new Color(0.25f, 0.42f, 0.74f); // shallow water
-        sColorBank[2] = new Color(0.83f, 0.88f, 0.13f); // sand
-        sColorBank[3] = new Color(0.22f, 0.88f, 0.13f); // shallow grass
-        sColorBank[4] = new Color(0.14f, 0.68f, 0.07f); // deep grass
-
-        sColorBank[5] = new Color(0.68f, 0.31f, 0.07f); // shallow mountian
-        sColorBank[6] = new Color(0.49f, 0.24f, 0.06f); // deep mountain
-        sColorBank[7] = new Color(0.8f, 0.8f, 0.9f); // snow
-    }
     Color ColorFromHeight(float h1, float h2, float h3)
     {
         float midPoint = (h1 + h2 + h3) / 3;
         float currZ = (midPoint - pointHeightMean) / pointHeightStdDevi;
 
-        for(int i=0; i<layers.Length; i++)
+        for(int i=0; i<layers.Length-1; i++)
         {
             if(currZ < ChunkLayer.zValues[layers[i].zValueIndex])
                 return layers[i].color;
@@ -459,7 +452,13 @@ public class Chunk
         pointHeightMean = 0.7325492f;
         pointHeightStdDevi = 0.04852225f;
     }
+    float GetNewHeight(float pointHeight)
+    {
+        double zVal = (pointHeight - pointHeightMean) / pointHeightStdDevi;
+        double percentile = ChunkLayer.Phi(zVal);
 
+        return mHeightCurve.Evaluate((float)percentile);
+    }
     static void CalcLayerValues()
     {
         float[] zValues = new float[21] {
@@ -490,13 +489,14 @@ public class Chunk
         //     new ChunkLayer(21, new Color(0.8f, 0.8f, 0.9f)) // snow                 
         // };
 
-        sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
+        /*sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
         sLayerEndShallowWater = sHeightCurve.Evaluate(0.682520f);
         sLayerEndSand = sHeightCurve.Evaluate(0.700290f);
         sLayerEndLightGrass = sHeightCurve.Evaluate(0.733372f);
         sLayerEndDarkGrass = sHeightCurve.Evaluate(0.752275f);
         sLayerEndLightMountain = sHeightCurve.Evaluate(0.774707f);
         sLayerEndDarkMountain = sHeightCurve.Evaluate(0.814128f);
+        */
     }
     Vector2[] GetOctaveOffsetPoint()
     {
