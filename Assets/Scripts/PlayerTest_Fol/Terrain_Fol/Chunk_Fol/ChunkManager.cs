@@ -19,6 +19,7 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private Material waterMaterial;
     [SerializeField] private NoiseData noiseData;
     [SerializeField] private AnimationCurve heightCurve;
+    [SerializeField] private ChunkLayer[] layers;
 
     public static List<float> allpoints;
 
@@ -31,7 +32,8 @@ public class ChunkManager : MonoBehaviour
             Chunk.Init(
                 playerGO, this.gameObject, groundLayer,
                 pointsPerChunk, chunkSize, meshType, meshMaterial, waterMaterial,
-                noiseData, heightMultiplier, heightCurve
+                noiseData, heightMultiplier, heightCurve,
+                layers
             );
             terrainDynamicLoad.enabled = true;
         }
@@ -61,7 +63,8 @@ public class ChunkManager : MonoBehaviour
                 playerGO, TestParentGO, groundLayer,
                 pointsPerChunk, chunkSize, meshType, meshMaterial, waterMaterial,
                 noiseData,
-                heightMultiplier, heightCurve
+                heightMultiplier, heightCurve,
+                layers
             );
             MakeBigSquareEditorVer();
             // PointsStuff();
@@ -164,7 +167,7 @@ public class ChunkManager : MonoBehaviour
                     if(chunksForEditor[x, z].meshGO != null)
                         DestroyImmediate(chunksForEditor[x, z].meshGO);
                 }
-            }
+            } 
         }
         chunksForEditor = new Chunk[ChunkLoadCountForEditor, ChunkLoadCountForEditor];
         for (int x = 0; x < chunksForEditor.GetLength(0); x++)

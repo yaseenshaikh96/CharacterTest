@@ -29,6 +29,9 @@ public class Chunk
     static NoiseData mNoiseData; 
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
+    static float pointHeightMean, pointHeightStdDevi;
+
+    public static ChunkLayer[] layers;
     //---------------------------------------------------------------------------------//
     public bool heightDataLoaded { get; private set; }
     public bool gameObjectMade { get; private set; }
@@ -59,7 +62,8 @@ public class Chunk
         GameObject playerGO, GameObject parentGO, LayerMask groundLayer,
         int pointsPerChunk, float chunkSize, MeshType meshType, Material meshMaterial, Material waterMaterial,
         NoiseData noiseData,
-        float heightMultiplier, AnimationCurve heightCurve
+        float heightMultiplier, AnimationCurve heightCurve,
+        ChunkLayer[] _layers
     )
     {
 
@@ -81,19 +85,15 @@ public class Chunk
         sHeightCurve = heightCurve;
 
         sMaxNoiseHeight = CalculateMaxNoiseHeight();
-        MakeStaticColors();
 
         sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
 
-        sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
-        sLayerEndShallowWater = sHeightCurve.Evaluate(0.682520f);
-        sLayerEndSand = sHeightCurve.Evaluate(0.700290f);
-        sLayerEndLightGrass = sHeightCurve.Evaluate(0.733372f);
-        sLayerEndDarkGrass = sHeightCurve.Evaluate(0.752275f);
-        sLayerEndLightMountain = sHeightCurve.Evaluate(0.774707f);
-        sLayerEndDarkMountain = sHeightCurve.Evaluate(0.814128f);
-
+        MakeStaticColors();
+        CalcMeanAndStdDevi();
+        CalcLayerValues();
+        
+        layers = _layers;
     }
     public Chunk(Vector3 chunkPos)
     {
@@ -405,15 +405,8 @@ public class Chunk
 
     private void MakeHeightData()
     {
-        System.Random prng = new System.Random(mNoiseData.seed);
 
-        Vector2[] octaveOffsets = new Vector2[mNoiseData.octave];
-
-        for (int i = 0; i < mNoiseData.octave; i++)
-        {
-            octaveOffsets[i].x = prng.Next(-10000, 10000) + mNoiseData.offset.x;
-            octaveOffsets[i].y = prng.Next(-10000, 10000) + mNoiseData.offset.y;
-        }
+        Vector2[] octaveOffset = GetOctaveOffsetPoint();
 
         for (int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
         {
@@ -425,37 +418,14 @@ public class Chunk
                 float zPos = ((float)zIndex / (sPointsPerChunk - 1)) * sChunkSize;
                 xPos += mWorldPos.x; // worldPos
                 zPos += mWorldPos.z; // worldPos
-
-                float frequency = 1;
-                float amplitude = 1;
-
-                float noiseForAllOct = 0;
-                for (int octIndex = 0; octIndex < mNoiseData.octave; octIndex++)
-                {
-                    float xPosAdj = (xPos + octaveOffsets[octIndex].x) / mNoiseData.scale * frequency;
-                    float zPosAdj = (zPos + octaveOffsets[octIndex].y) / mNoiseData.scale * frequency;
-
-                    float noiseForThisOct = Remap(Mathf.PerlinNoise(xPosAdj, zPosAdj), -1, 1, 0, 1);
-                    noiseForAllOct += noiseForThisOct * amplitude;
-
-                    frequency *= mNoiseData.lacunarity;
-                    amplitude *= mNoiseData.presistance;
-                }
-
-                float normalizedNoise = Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
+                float noise = getNoiseValue(xPos, zPos, octaveOffset);
+                
                 // ChunkManager.allpoints.Add(normalizedNoise);
-                heightDataNormalized[currentIndex] = normalizedNoise;
+                heightDataNormalized[currentIndex] = noise;
             }
         }
     }
-    void MakeColorData()
-    {
 
-    }
-    void HeightDataCurveAdj()
-    {
-
-    }
     static void MakeStaticColors()
     {
         sColorBank = new Color[8];
@@ -472,47 +442,93 @@ public class Chunk
     Color ColorFromHeight(float h1, float h2, float h3)
     {
         float midPoint = (h1 + h2 + h3) / 3;
+        float currZ = (midPoint - pointHeightMean) / pointHeightStdDevi;
 
-        float mean = 0.7325492f;
-        float stdDevi = 0.04852225f;
-        float z10 = -1.282f;
-        float z15 = -1.036f;
-        // float z20 = -0.842f;
-        float z25 = -0.674f;
-        // float z30 = -0.524f;
-        // float z40 = -0.253f;
-        float z50 = 0f;
-        // float z60 = +0.253f;
-        float z65 = +0.385f;
-        // float z70 = +0.524f;
-        float z80 = +0.842f;
-        // float z90 = +1.282f;
-        float z95 = +1.645f;
-        Color color;
-        float currZ = (midPoint - mean) / stdDevi;
-
-        if (currZ < z10)
-            color = sColorBank[0];
-        else if (currZ < z15)
-            color = sColorBank[1];
-        else if (currZ < z25)
-            color = sColorBank[2];
-        else if (currZ < z50)
-            color = sColorBank[3];
-        else if (currZ < z65)
-            color = sColorBank[4];
-        else if (currZ < z80)
-            color = sColorBank[5];
-        else if (currZ < z95)
-            color = sColorBank[6];
-        else
-            color = sColorBank[7];
-
-        return color;
-
+        for(int i=0; i<layers.Length; i++)
+        {
+            if(currZ < ChunkLayer.zValues[layers[i].zValueIndex])
+                return layers[i].color;
+        }
+        return layers[layers.Length - 1].color;
     }
 
     //----------------------------------------------------------------------------------------//
+
+    static void CalcMeanAndStdDevi()
+    {
+        pointHeightMean = 0.7325492f;
+        pointHeightStdDevi = 0.04852225f;
+    }
+
+    static void CalcLayerValues()
+    {
+        float[] zValues = new float[21] {
+            -10f   , -1.645f,   // 00: 0.00, 01: 0.05
+            -1.282f, -1.036f,   // 02: 0.10, 03: 0.15
+            -0.842f, -0.674f,   // 04: 0.20, 05: 0.25
+            -0.524f, -0.385f,   // 06: 0.30, 07: 0.35
+            -0.253f, -0.126f,   // 08: 0.40, 09: 0.45
+            0,                  // 10: 0.50
+            0.126f, 0.253f,     // 12: 0.55, 13: 0.60
+            0.385f, 0.524f,     // 14: 0.65, 15: 0.70
+            0.674f, 0.842f,     // 16: 0.75, 17: 0.80
+            1.036f, 1.282f,     // 18: 0.85, 19: 0.90
+            1.645f, 10f         // 20: 0.95, 21: 1.00
+        };
+        
+        ChunkLayer.Init(zValues, pointHeightMean, pointHeightStdDevi);
+
+        // layers = new ChunkLayer[8]
+        // {
+        //     new ChunkLayer(2, new Color(0.12f, 0.11f, 0.79f)), // deep water
+        //     new ChunkLayer(3, new Color(0.25f, 0.42f, 0.74f)), // shallow water
+        //     new ChunkLayer(5, new Color(0.83f, 0.88f, 0.13f)), // sand
+        //     new ChunkLayer(10, new Color(0.22f, 0.88f, 0.13f)), // shallow grass
+        //     new ChunkLayer(14, new Color(0.14f, 0.68f, 0.07f)), // deep grass
+        //     new ChunkLayer(17, new Color(0.68f, 0.31f, 0.07f)), // shallow mountian
+        //     new ChunkLayer(20, new Color(0.49f, 0.24f, 0.06f)), // deep mountain
+        //     new ChunkLayer(21, new Color(0.8f, 0.8f, 0.9f)) // snow                 
+        // };
+
+        sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
+        sLayerEndShallowWater = sHeightCurve.Evaluate(0.682520f);
+        sLayerEndSand = sHeightCurve.Evaluate(0.700290f);
+        sLayerEndLightGrass = sHeightCurve.Evaluate(0.733372f);
+        sLayerEndDarkGrass = sHeightCurve.Evaluate(0.752275f);
+        sLayerEndLightMountain = sHeightCurve.Evaluate(0.774707f);
+        sLayerEndDarkMountain = sHeightCurve.Evaluate(0.814128f);
+    }
+    Vector2[] GetOctaveOffsetPoint()
+    {
+        System.Random prng = new System.Random(mNoiseData.seed);
+        Vector2[] octaveOffsets = new Vector2[mNoiseData.octave];
+        for (int i = 0; i < mNoiseData.octave; i++)
+        {
+            octaveOffsets[i].x = prng.Next(-10000, 10000) + mNoiseData.offset.x;
+            octaveOffsets[i].y = prng.Next(-10000, 10000) + mNoiseData.offset.y;
+        }
+        return octaveOffsets;
+    }
+
+    float getNoiseValue(float xWorldPos, float zWorldPos, Vector2[] octaveOffsets)
+    {
+        float frequency = 1;
+        float amplitude = 1;
+
+        float noiseForAllOct = 0;
+        for (int octIndex = 0; octIndex < mNoiseData.octave; octIndex++)
+        {
+            float xPosAdj = (xWorldPos + octaveOffsets[octIndex].x) / mNoiseData.scale * frequency;
+            float zPosAdj = (zWorldPos + octaveOffsets[octIndex].y) / mNoiseData.scale * frequency;
+
+            float noiseForThisOct = Remap(Mathf.PerlinNoise(xPosAdj, zPosAdj), -1, 1, 0, 1);
+            noiseForAllOct += noiseForThisOct * amplitude;
+
+            frequency *= mNoiseData.lacunarity;
+            amplitude *= mNoiseData.presistance;
+        }
+        return Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
+    }
 
     static float CalculateMaxNoiseHeight()
     {
