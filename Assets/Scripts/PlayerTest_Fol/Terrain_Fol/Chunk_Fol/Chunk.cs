@@ -28,7 +28,6 @@ public class Chunk
     static NoiseData mNoiseData; 
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
-    static float pointHeightMean, pointHeightStdDevi;
     static float waterLayerHeight;
     public static ChunkLayer[] layers;
     //---------------------------------------------------------------------------------//
@@ -88,9 +87,13 @@ public class Chunk
         sVerticesPosIndexCount = sPointsPerChunk * sPointsPerChunk;
         sTriangleIndexCount = 6 * (sPointsPerChunk - 1) * (sPointsPerChunk - 1);
 
-        CalcMeanAndStdDevi();
-        CalcLayerValues();
         layers = _layers;
+        InitializeChunkLayer();
+        for(int i=0;i<layers.Length; i++)
+        {
+            layers[i].CalcHeight();
+            layers[i].CalcCurveEvaledHeight(sHeightCurveRef);
+        }
         CalcWaterLevel();
     }
     public Chunk(Vector3 chunkPos)
@@ -232,6 +235,7 @@ public class Chunk
             {
                 Tree tree = new Tree(vertexPositions[i], meshGO);
                 spawnableGOs.Add(tree);
+                spawnablePoints[i] = false;
             }
         }
     }
@@ -262,8 +266,8 @@ public class Chunk
                 //     ", darkGrass: " + layerEndDarkGrass * sHeightMultiplier);
                 if (
                     deviation < 2f &&
-                    currentPoint.y > sLayerEndSand * sHeightMultiplier &&
-                    currentPoint.y < sLayerEndDarkGrass * sHeightMultiplier
+                    currentPoint.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
+                    currentPoint.y < layers[4].curveEvaledHeight * sHeightMultiplier
                 )
                     spawnablePoints[currentIndex] = true;
                 else
@@ -305,8 +309,8 @@ public class Chunk
     }
     static void CalcWaterLevel()
     {
-        float layer1hight = sHeightCurveRef.Evaluate(layers[1].GetHeight());
-        float layer2hight = sHeightCurveRef.Evaluate(layers[2].GetHeight());
+        float layer1hight = layers[1].curveEvaledHeight;
+        float layer2hight = layers[2].curveEvaledHeight;
         waterLayerHeight = (layer1hight + layer2hight) / 2;
     }
     void FlatMesh()
@@ -435,7 +439,7 @@ public class Chunk
     Color ColorFromHeight(float h1, float h2, float h3)
     {
         float midPoint = (h1 + h2 + h3) / 3;
-        float currZ = (midPoint - pointHeightMean) / pointHeightStdDevi;
+        float currZ = (midPoint - ChunkLayer.mean) / ChunkLayer.stdDevi;
 
         for(int i=0; i<layers.Length-1; i++)
         {
@@ -447,46 +451,54 @@ public class Chunk
 
     //----------------------------------------------------------------------------------------//
 
-    static void CalcMeanAndStdDevi()
-    {
-        pointHeightMean = 0.7325492f;
-        pointHeightStdDevi = 0.04852225f;
-    }
     float GetNewHeight(float pointHeight)
     {
-        double zVal = (pointHeight - pointHeightMean) / pointHeightStdDevi;
+        double zVal = (pointHeight - ChunkLayer.mean) / ChunkLayer.stdDevi;
         double percentile = ChunkLayer.Phi(zVal);
 
         return mHeightCurve.Evaluate((float)percentile);
     }
-    static void CalcLayerValues()
-    {
-        float[] zValues = new float[21] {
-            -10f   , -1.645f,   // 00: 0.00, 01: 0.05
-            -1.282f, -1.036f,   // 02: 0.10, 03: 0.15
-            -0.842f, -0.674f,   // 04: 0.20, 05: 0.25
-            -0.524f, -0.385f,   // 06: 0.30, 07: 0.35
-            -0.253f, -0.126f,   // 08: 0.40, 09: 0.45
-            0,                  // 10: 0.50
-            0.126f, 0.253f,     // 12: 0.55, 13: 0.60
-            0.385f, 0.524f,     // 14: 0.65, 15: 0.70
-            0.674f, 0.842f,     // 16: 0.75, 17: 0.80
-            1.036f, 1.282f,     // 18: 0.85, 19: 0.90
-            1.645f, 10f         // 20: 0.95, 21: 1.00
-        };
+    static void InitializeChunkLayer()
+    {   
+        Vector2[] ovtaveOffsets = GetOctaveOffsetPoint();
+        int N = 100000;
+        float[] dataPoints = new float[N];
+        float total = 0;
+        for(int i=0; i<N; i++)
+        {
+
+            float xPos = ((float)i / (sPointsPerChunk - 1)) * sChunkSize;
+            float zPos = ((float)(i+200) / (sPointsPerChunk - 1)) * sChunkSize;
+            float noise = getNoiseValue(xPos, zPos, ovtaveOffsets);
+            dataPoints[i] = noise;
+            total += noise;
+        }
+
+        float mean = total / N;
+        float stdDevi = 0;
+        for(int i=0; i<N; i++)
+        {
+            stdDevi += (dataPoints[i] - mean) * (dataPoints[i] - mean);
+        }
+        stdDevi /= N; 
+        stdDevi = Mathf.Sqrt(stdDevi);
+        ChunkLayer.Init(mean, stdDevi);
         
-        ChunkLayer.Init(zValues, pointHeightMean, pointHeightStdDevi);
+
+        //float pointHeightMean = 0.7325492f;
+        //float pointHeightStdDevi = 0.04852225f;
+        // ChunkLayer.Init(pointHeightMean, pointHeightStdDevi);
 
         // layers = new ChunkLayer[8]
         // {
-        //     new ChunkLayer(2, new Color(0.12f, 0.11f, 0.79f)), // deep water
-        //     new ChunkLayer(3, new Color(0.25f, 0.42f, 0.74f)), // shallow water
-        //     new ChunkLayer(5, new Color(0.83f, 0.88f, 0.13f)), // sand
-        //     new ChunkLayer(10, new Color(0.22f, 0.88f, 0.13f)), // shallow grass
-        //     new ChunkLayer(14, new Color(0.14f, 0.68f, 0.07f)), // deep grass
-        //     new ChunkLayer(17, new Color(0.68f, 0.31f, 0.07f)), // shallow mountian
-        //     new ChunkLayer(20, new Color(0.49f, 0.24f, 0.06f)), // deep mountain
-        //     new ChunkLayer(21, new Color(0.8f, 0.8f, 0.9f)) // snow                 
+        //     new ChunkLayer(2, new Color(0.12f, 0.11f, 0.79f)), // deep water         0
+        //     new ChunkLayer(3, new Color(0.25f, 0.42f, 0.74f)), // shallow water      1
+        //     new ChunkLayer(5, new Color(0.83f, 0.88f, 0.13f)), // sand               2
+        //     new ChunkLayer(10, new Color(0.22f, 0.88f, 0.13f)), // shallow grass     3
+        //     new ChunkLayer(14, new Color(0.14f, 0.68f, 0.07f)), // deep grass        4
+        //     new ChunkLayer(17, new Color(0.68f, 0.31f, 0.07f)), // shallow mountian  5
+        //     new ChunkLayer(20, new Color(0.49f, 0.24f, 0.06f)), // deep mountain     6
+        //     new ChunkLayer(21, new Color(0.8f, 0.8f, 0.9f)) // snow                  7
         // };
 
         /*sLayerEndDeepWater = sHeightCurve.Evaluate(0.670443f);
@@ -498,7 +510,7 @@ public class Chunk
         sLayerEndDarkMountain = sHeightCurve.Evaluate(0.814128f);
         */
     }
-    Vector2[] GetOctaveOffsetPoint()
+    static Vector2[] GetOctaveOffsetPoint()
     {
         System.Random prng = new System.Random(mNoiseData.seed);
         Vector2[] octaveOffsets = new Vector2[mNoiseData.octave];
@@ -510,7 +522,7 @@ public class Chunk
         return octaveOffsets;
     }
 
-    float getNoiseValue(float xWorldPos, float zWorldPos, Vector2[] octaveOffsets)
+    static float getNoiseValue(float xWorldPos, float zWorldPos, Vector2[] octaveOffsets)
     {
         float frequency = 1;
         float amplitude = 1;

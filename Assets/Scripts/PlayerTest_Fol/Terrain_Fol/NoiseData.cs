@@ -7,8 +7,8 @@ using UnityEditor;
 public class NoiseData
 {
     public int seed;
-    [Range(1, 500)]public float scale;
-    [Range(1, 6)] public int octave;
+    [Range(1, 2000)]public float scale;
+    [Range(1, 12)] public int octave;
     [Range(0, 5)]public float lacunarity;
     [Range(0, 1)] public float presistance;
     public Vector2 offset;

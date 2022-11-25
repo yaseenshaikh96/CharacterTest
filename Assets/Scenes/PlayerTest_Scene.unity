@@ -2066,7 +2066,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   update: 0
   clear: 0
-  ChunkLoadCountForEditor: 6
+  ChunkLoadCountForEditor: 4
   terrainDynamicLoad: {fileID: 1148630981}
   playerGO: {fileID: 473744978}
   TestParentGO: {fileID: 849133788}
@@ -2075,16 +2075,16 @@ MonoBehaviour:
     m_Bits: 256
   pointsPerChunk: 28
   chunkSize: 100
-  heightMultiplier: 220
+  heightMultiplier: 320
   meshType: 0
   meshMaterial: {fileID: 2100000, guid: 9d55c711feed57a498c14d45b3e74889, type: 2}
   waterMaterial: {fileID: 2100000, guid: 1dd290feacfe0af43a1c898c7a030ab3, type: 2}
   noiseData:
     seed: 3
-    scale: 500
-    octave: 4
+    scale: 1000
+    octave: 5
     lacunarity: 2
-    presistance: 0.585
+    presistance: 0.7
     offset: {x: 0, y: 0}
   heightCurveRef:
     serializedVersion: 2
@@ -2092,26 +2092,53 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1.7691361
-      outSlope: 1.7691361
+      inSlope: 2.9172785
+      outSlope: 2.9172785
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.23020571
-      value: 0.40726525
-      inSlope: 1.0451797
-      outSlope: 1.0451797
+      time: 0.1454793
+      value: 0.42440367
+      inSlope: 1.9253325
+      outSlope: 1.9253325
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.7081101
-      value: 0.56077933
-      inSlope: 0.6847317
-      outSlope: 0.6847317
+      time: 0.19656242
+      value: 0.47208396
+      inSlope: 0.6067502
+      outSlope: 0.6067502
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.28189585
+      value: 0.4975856
+      inSlope: 0.042414196
+      outSlope: 0.042414196
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0.13355833
+    - serializedVersion: 3
+      time: 0.5264146
+      value: 0.54092294
+      inSlope: 0.12287754
+      outSlope: 0.12287754
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.7067673
+      value: 0.59616446
+      inSlope: 0.5462085
+      outSlope: 0.5462085
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -2119,8 +2146,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0.847133
       value: 0.7065087
-      inSlope: 1.4840763
-      outSlope: 1.4840763
+      inSlope: 1.3530161
+      outSlope: 1.3530161
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -2144,7 +2171,7 @@ MonoBehaviour:
     color: {r: 0.25, g: 0.4, b: 0.75, a: 0}
   - zValueIndex: 5
     color: {r: 0.85, g: 0.75, b: 0.25, a: 0}
-  - zValueIndex: 10
+  - zValueIndex: 12
     color: {r: 0.2, g: 0.9, b: 0.15, a: 0}
   - zValueIndex: 14
     color: {r: 0.15, g: 0.7, b: 0.07, a: 0}
@@ -2152,7 +2179,7 @@ MonoBehaviour:
     color: {r: 0.7, g: 0.3, b: 0.07, a: 0}
   - zValueIndex: 19
     color: {r: 0.5, g: 0.25, b: 0.06, a: 0}
-  - zValueIndex: 21
+  - zValueIndex: 20
     color: {r: 0.8, g: 0.8, b: 0.9, a: 0}
 --- !u!114 &1148630981
 MonoBehaviour:

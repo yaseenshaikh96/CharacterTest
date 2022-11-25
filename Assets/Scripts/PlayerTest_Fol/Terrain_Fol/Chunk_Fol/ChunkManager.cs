@@ -13,7 +13,7 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField, Range(2, 50)] private int pointsPerChunk;
     [SerializeField, Range(5, 100)] private float chunkSize; // in world pos
-    [SerializeField, Range(5, 700)] private float heightMultiplier;
+    [SerializeField, Range(5, 1000)] private float heightMultiplier;
     [SerializeField] private MeshType meshType;
     [SerializeField] private Material meshMaterial;
     [SerializeField] private Material waterMaterial;

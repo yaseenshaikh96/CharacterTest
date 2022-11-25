@@ -10,24 +10,44 @@ public class ChunkLayer
     //----------------------------------------------//
     public int zValueIndex;
     public Color color;
+    public float height {get; private set;}
+    public float curveEvaledHeight {get; private set;}
 
-    public static void Init(float[] _zValues, float _mean, float _stdDevi)
+    public static void Init(float _mean, float _stdDevi)
     {
-        zValues = _zValues;
         mean = _mean;
         stdDevi = _stdDevi;
-    }
+    
+        zValues = new float[21] {
+            -10f   , -1.645f,   // 00: 0.00, 01: 0.05
+            -1.282f, -1.036f,   // 02: 0.10, 03: 0.15
+            -0.842f, -0.674f,   // 04: 0.20, 05: 0.25
+            -0.524f, -0.385f,   // 06: 0.30, 07: 0.35
+            -0.253f, -0.126f,   // 08: 0.40, 09: 0.45
+            0,                  // 10: 0.50
+            0.126f, 0.253f,     // 12: 0.55, 13: 0.60
+            0.385f, 0.524f,     // 14: 0.65, 15: 0.70
+            0.674f, 0.842f,     // 16: 0.75, 17: 0.80
+            1.036f, 1.282f,     // 18: 0.85, 19: 0.90
+            1.645f, 10f         // 20: 0.95, 21: 1.00
+        };
+    } 
     public ChunkLayer(int zVal, Color col)
     {
         zValueIndex = zVal;
         color = col;
     }
-    public float GetHeight()
+    public void CalcHeight()
     {
-        return (float)Phi(ChunkLayer.zValues[zValueIndex]);
+        height = (float)Phi(ChunkLayer.zValues[zValueIndex]);
+    }
+    public void CalcCurveEvaledHeight(AnimationCurve ac)
+    {
+        curveEvaledHeight = ac.Evaluate(height);
     }
     public static double Phi(double x)
     {
+        // credits: https://www.johndcook.com/blog/csharp_phi/
         // constants
         double a1 = 0.254829592;
         double a2 = -0.284496736;
