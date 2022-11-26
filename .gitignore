@@ -1,6 +1,6 @@
-*.csproj
+# *.csproj
 
-.vscode/
+# .vscode/
 
 Assets/Models/
 
@@ -14,8 +14,8 @@ obj/
 
 Packages/
 
-ProjectSettings/
+# ProjectSettings/
 
 Temp/
 
-UserSettings/
+# UserSettings/

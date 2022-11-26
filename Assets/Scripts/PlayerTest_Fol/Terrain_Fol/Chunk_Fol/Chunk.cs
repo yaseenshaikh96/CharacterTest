@@ -8,6 +8,7 @@ public enum MeshType
 }
 public class Chunk
 {
+    /*
     public static float sLayerEndDeepWater;
     public static float sLayerEndShallowWater;
     public static float sLayerEndSand;
@@ -15,6 +16,7 @@ public class Chunk
     public static float sLayerEndDarkGrass;
     public static float sLayerEndLightMountain;
     public static float sLayerEndDarkMountain;
+    */
     public static GameObject sPlayerGO { get; private set; }
     public static GameObject sParentGO { get; private set; }
     public static LayerMask sGroundLayer { get; private set; }
@@ -483,7 +485,7 @@ public class Chunk
         stdDevi /= N; 
         stdDevi = Mathf.Sqrt(stdDevi);
         ChunkLayer.Init(mean, stdDevi);
-        
+        Debug.Log("mean: " + mean + ", stdDevi: " + stdDevi);
 
         //float pointHeightMean = 0.7325492f;
         //float pointHeightStdDevi = 0.04852225f;
@@ -533,13 +535,14 @@ public class Chunk
             float xPosAdj = (xWorldPos + octaveOffsets[octIndex].x) / mNoiseData.scale * frequency;
             float zPosAdj = (zWorldPos + octaveOffsets[octIndex].y) / mNoiseData.scale * frequency;
 
-            float noiseForThisOct = Remap(Mathf.PerlinNoise(xPosAdj, zPosAdj), -1, 1, 0, 1);
+            float noiseForThisOct = Mathf.PerlinNoise(xPosAdj, zPosAdj);//Remap(Mathf.PerlinNoise(xPosAdj, zPosAdj), -1, 1, 0, 1);
             noiseForAllOct += noiseForThisOct * amplitude;
 
             frequency *= mNoiseData.lacunarity;
             amplitude *= mNoiseData.presistance;
         }
-        return Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
+        return Remap(noiseForAllOct, -sMaxNoiseHeight, sMaxNoiseHeight, 0, 1);
+        // return Remap(noiseForAllOct, 0, sMaxNoiseHeight, 0, 1);
     }
 
     static float CalculateMaxNoiseHeight()
