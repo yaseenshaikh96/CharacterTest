@@ -23,7 +23,7 @@ public class ChunkManager : MonoBehaviour
 
     public static List<float> allpoints;
 
-    void Start()
+    void Start() 
     {
         if (Application.isPlaying)
         {

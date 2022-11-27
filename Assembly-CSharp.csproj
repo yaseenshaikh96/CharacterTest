@@ -108,6 +108,7 @@
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Enemy_Fol\Enemy_AI.cs" />
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Inputs\ArrowInput.cs" />
      <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
+     <Compile Include="Assets\Scripts\PlayerTest_Fol\Test\findNormals.cs" />
      <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />

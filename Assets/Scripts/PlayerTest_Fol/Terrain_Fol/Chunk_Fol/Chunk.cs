@@ -4,7 +4,7 @@ using UnityEngine;
 
 public enum MeshType
 {
-    flat, smooth
+    seperate, joined
 }
 public class Chunk
 {
@@ -27,7 +27,7 @@ public class Chunk
     public static MeshType sMeshType { get; private set; }
     public static float sHeightMultiplier { get; private set; }
     public static AnimationCurve sHeightCurveRef { get; private set; }
-    static NoiseData mNoiseData; 
+    static NoiseData mNoiseData;
     static float sMaxNoiseHeight;
     static int sVerticesPosIndexCount, sTriangleIndexCount;
     static float waterLayerHeight;
@@ -37,15 +37,15 @@ public class Chunk
     public bool gameObjectMade { get; private set; }
     public bool hasCollider { get; private set; }
     public Vector3 mWorldPos { get; private set; } // unique ID
-    public Vector3 mWorldPosCentered { get; private set; } 
+    public Vector3 mWorldPosCentered { get; private set; }
     public Vector3 mChunkPos { get; private set; }
     public float timeWhenCreated;
     //---------------------------------------------------------------------------------//
     AnimationCurve mHeightCurve;
     List<Tree> spawnableGOs;
     GameObject waterParent;
-    Vector3[] vertexPositions;
     bool[] spawnablePoints;
+    Vector3[] vertexPositions;
     Vector3[] vertices;
     int[] triangles;
     Color[] colors;
@@ -91,7 +91,7 @@ public class Chunk
 
         layers = _layers;
         InitializeChunkLayer();
-        for(int i=0;i<layers.Length; i++)
+        for (int i = 0; i < layers.Length; i++)
         {
             layers[i].CalcHeight();
             layers[i].CalcCurveEvaledHeight(sHeightCurveRef);
@@ -102,7 +102,7 @@ public class Chunk
     {
         timeWhenCreated = Time.time;
         mWorldPos = chunkPos * sChunkSize;
-        mWorldPosCentered = new Vector3(mWorldPos.x + (sChunkSize/2), 0 ,mWorldPos.z + (sChunkSize/2));
+        mWorldPosCentered = new Vector3(mWorldPos.x + (sChunkSize / 2), 0, mWorldPos.z + (sChunkSize / 2));
         mChunkPos = chunkPos;
 
         mHeightCurve = new AnimationCurve(sHeightCurveRef.keys);
@@ -110,7 +110,6 @@ public class Chunk
         heightDataLoaded = false;
         gameObjectMade = false;
         hasCollider = false;
-
     }
     public void Delete()
     {
@@ -137,10 +136,13 @@ public class Chunk
         spawnablePoints = new bool[sVerticesPosIndexCount];
         spawnableGOs = new List<Tree>();
 
-        if (sMeshType == MeshType.flat)
+        if (sMeshType == MeshType.seperate)
             vertices = new Vector3[sTriangleIndexCount];
-        else if (sMeshType == MeshType.smooth)
+        else if (sMeshType == MeshType.joined)
+        {
             vertices = new Vector3[sVerticesPosIndexCount];
+            normals = new Vector3[sVerticesPosIndexCount];
+        }
 
         MakeHeightData();
 
@@ -160,13 +162,13 @@ public class Chunk
             }
         }
 
-        if (sMeshType == MeshType.flat)
+        if (sMeshType == MeshType.seperate)
         {
-            FlatMesh();
+            SeperateMesh();
         }
-        else if (sMeshType == MeshType.smooth)
+        else if (sMeshType == MeshType.joined)
         {
-            SmoothMesh();
+            JoinedMesh();
         }
 
         FindSpawnablePoints();
@@ -176,11 +178,14 @@ public class Chunk
     public void MakeGameObject()
     {
         Mesh mesh = new Mesh();
+
         mesh.SetVertices(vertices);
         mesh.triangles = triangles;
         if (colors != null)
             mesh.SetColors(colors);
-        mesh.RecalculateNormals();
+
+        if (sMeshType == MeshType.seperate)
+            mesh.RecalculateNormals();
 
         meshGO = new GameObject($"Chunk {mWorldPos.x} {mWorldPos.z}");
 
@@ -206,10 +211,10 @@ public class Chunk
     //-------------------------------------------------------------------------------//
     public void AddCollider()
     {
-        if(!hasCollider)
+        if (!hasCollider)
         {
-            mMeshCollider.enabled = true; 
-            foreach(var spawns in spawnableGOs)
+            mMeshCollider.enabled = true;
+            foreach (var spawns in spawnableGOs)
             {
                 spawns.AddCollider();
             }
@@ -218,10 +223,10 @@ public class Chunk
     }
     public void RemoveCollider()
     {
-        if(hasCollider)
+        if (hasCollider)
         {
-            mMeshCollider.enabled = false; 
-            foreach(var spawns in spawnableGOs)
+            mMeshCollider.enabled = false;
+            foreach (var spawns in spawnableGOs)
             {
                 spawns.RemoveCollider();
             }
@@ -315,7 +320,7 @@ public class Chunk
         float layer2hight = layers[2].curveEvaledHeight;
         waterLayerHeight = (layer1hight + layer2hight) / 2;
     }
-    void FlatMesh()
+    void SeperateMesh()
     {
         int currentTriangleCount = 0;
         for (int xIndex = 0; xIndex < sPointsPerChunk - 1; xIndex++)
@@ -377,42 +382,84 @@ public class Chunk
                 triangles[currentTriangleCount + 4] = currentTriangleCount + 4;
                 triangles[currentTriangleCount + 5] = currentTriangleCount + 5;
 
-
-
                 currentTriangleCount += 6;
             }
         }
     }
-    void SmoothMesh()
+    void JoinedMesh()
     {
+    
+        /*
+            1    2
+            +----+
+            |    |
+            |    |
+            +----+
+            0    3
         for (int index = 0; index < sVerticesPosIndexCount; index++)
+        {
             vertices[index] = vertexPositions[index];
+        }
 
-        int currentTriangleIndex = 0;
+        int currentTriangleCount = 0;
         for (int xIndex = 0; xIndex < sPointsPerChunk - 1; xIndex++)
         {
             for (int zIndex = 0; zIndex < sPointsPerChunk - 1; zIndex++)
             {
                 int currentVertexIndex = (xIndex * sPointsPerChunk) + zIndex;
-
                 int currentPointIndex = currentVertexIndex;
                 int rightPointIndex = currentPointIndex + sPointsPerChunk;
                 int topPointIndex = currentPointIndex + 1;
                 int topRightPointIndex = currentPointIndex + sPointsPerChunk + 1;
 
-                //triangle 1
-                triangles[currentTriangleIndex + 0] = currentPointIndex;
-                triangles[currentTriangleIndex + 1] = topPointIndex;
-                triangles[currentTriangleIndex + 2] = topRightPointIndex;
+                Color color1 = ColorFromHeight(
+                    heightDataNormalized[currentPointIndex],
+                    heightDataNormalized[topPointIndex],
+                    heightDataNormalized[topRightPointIndex]
+                );
+                colors[currentTriangleCount + 0] = color1;
+                colors[currentTriangleCount + 1] = color1;
+                colors[currentTriangleCount + 2] = color1;
+                colors[currentTriangleCount + 3] = color1; // color2
+                colors[currentTriangleCount + 4] = color1; // color2
+                colors[currentTriangleCount + 5] = color1; // color2
 
-                //triangle 2
-                triangles[currentTriangleIndex + 3] = currentPointIndex;
-                triangles[currentTriangleIndex + 4] = topRightPointIndex;
-                triangles[currentTriangleIndex + 5] = rightPointIndex;
+                // triangle1
+                triangles[currentTriangleCount + 0] = currentPointIndex;
+                triangles[currentTriangleCount + 1] = topPointIndex;
+                triangles[currentTriangleCount + 2] = topRightPointIndex;
 
-                currentTriangleIndex += 6;
+                // triangle2
+                triangles[currentTriangleCount + 3] = currentPointIndex;
+                triangles[currentTriangleCount + 4] = topRightPointIndex;
+                triangles[currentTriangleCount + 5] = rightPointIndex;
+
+                currentTriangleCount += 6;
             }
         }
+        for (int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
+        {
+            for (int zIndex = 0; zIndex < sPointsPerChunk; zIndex++)
+            {
+                int currentVertexIndex = (xIndex * sPointsPerChunk) + zIndex;
+                int currentPointIndex = currentVertexIndex;
+                int rightPointIndex = currentPointIndex + sPointsPerChunk;
+                int topPointIndex = currentPointIndex + 1;
+                int topRightPointIndex = currentPointIndex + sPointsPerChunk + 1;
+
+                Vector3 currentNormal1 = GetNormal(
+                    vertexPositions[currentPointIndex],
+                    vertexPositions[topPointIndex],
+                    vertexPositions[topRightPointIndex]
+                );
+                Vector3 currentNormal2 = GetNormal(
+                    vertexPositions[currentPointIndex],
+                    vertexPositions[topRightPointIndex],
+                    vertexPositions[rightPointIndex]
+                );
+            }
+        }
+        */
     }
 
     private void MakeHeightData()
@@ -431,7 +478,7 @@ public class Chunk
                 xPos += mWorldPos.x; // worldPos
                 zPos += mWorldPos.z; // worldPos
                 float noise = getNoiseValue(xPos, zPos, octaveOffset);
-                
+
                 // ChunkManager.allpoints.Add(normalizedNoise);
                 heightDataNormalized[currentIndex] = noise;
             }
@@ -443,12 +490,19 @@ public class Chunk
         float midPoint = (h1 + h2 + h3) / 3;
         float currZ = (midPoint - ChunkLayer.mean) / ChunkLayer.stdDevi;
 
-        for(int i=0; i<layers.Length-1; i++)
+        for (int i = 0; i < layers.Length - 1; i++)
         {
-            if(currZ < ChunkLayer.zValues[layers[i].zValueIndex])
+            if (currZ < ChunkLayer.zValues[layers[i].zValueIndex])
                 return layers[i].color;
         }
         return layers[layers.Length - 1].color;
+    }
+
+    Vector3 GetNormal(Vector3 pos1, Vector3 pos2, Vector3 pos3)
+    {
+        Vector3 pos12 = (pos2 - pos1).normalized; //  => b - a
+        Vector3 pos23 = (pos3 - pos2).normalized; //  => c - b
+        return Vector3.Cross(pos12, pos23);
     }
 
     //----------------------------------------------------------------------------------------//
@@ -461,16 +515,16 @@ public class Chunk
         return mHeightCurve.Evaluate((float)percentile);
     }
     static void InitializeChunkLayer()
-    {   
+    {
         Vector2[] ovtaveOffsets = GetOctaveOffsetPoint();
         int N = 100000;
         float[] dataPoints = new float[N];
         float total = 0;
-        for(int i=0; i<N; i++)
+        for (int i = 0; i < N; i++)
         {
 
             float xPos = ((float)i / (sPointsPerChunk - 1)) * sChunkSize;
-            float zPos = ((float)(i+200) / (sPointsPerChunk - 1)) * sChunkSize;
+            float zPos = ((float)(i + 200) / (sPointsPerChunk - 1)) * sChunkSize;
             float noise = getNoiseValue(xPos, zPos, ovtaveOffsets);
             dataPoints[i] = noise;
             total += noise;
@@ -478,11 +532,11 @@ public class Chunk
 
         float mean = total / N;
         float stdDevi = 0;
-        for(int i=0; i<N; i++)
+        for (int i = 0; i < N; i++)
         {
             stdDevi += (dataPoints[i] - mean) * (dataPoints[i] - mean);
         }
-        stdDevi /= N; 
+        stdDevi /= N;
         stdDevi = Mathf.Sqrt(stdDevi);
         ChunkLayer.Init(mean, stdDevi);
         Debug.Log("mean: " + mean + ", stdDevi: " + stdDevi);
