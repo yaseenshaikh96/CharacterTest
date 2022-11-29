@@ -43,6 +43,7 @@ public class Chunk
     //---------------------------------------------------------------------------------//
     AnimationCurve mHeightCurve;
     List<Tree> spawnableGOs;
+    List<Grass> grassGOs;
     GameObject waterParent;
     bool[] spawnablePoints;
     Vector3[] vertexPositions;
@@ -117,6 +118,10 @@ public class Chunk
         {
             UnityEngine.GameObject.Destroy(spawnableGOs[i].mTreeGO);
         }
+        for (int i = grassGOs.Count - 1; i > -1; i--)
+        {
+            UnityEngine.GameObject.Destroy(grassGOs[i].mGrassGO);
+        }
 
         UnityEngine.GameObject.Destroy(waterParent);
         UnityEngine.GameObject.Destroy(meshGO);
@@ -135,6 +140,7 @@ public class Chunk
         colors = new Color[sTriangleIndexCount];
         spawnablePoints = new bool[sVerticesPosIndexCount];
         spawnableGOs = new List<Tree>();
+        grassGOs = new List<Grass>();
 
         if (sMeshType == MeshType.seperate)
             vertices = new Vector3[sTriangleIndexCount];
@@ -238,11 +244,16 @@ public class Chunk
         Random.InitState(mNoiseData.seed);
         for (int i = 0; i < spawnablePoints.Length; i++)
         {
-            if (spawnablePoints[i] && Random.value < 0.05f)
+            if (spawnablePoints[i])
             {
-                Tree tree = new Tree(vertexPositions[i], meshGO);
-                spawnableGOs.Add(tree);
-                spawnablePoints[i] = false;
+                Grass grass = new Grass(vertexPositions[i], meshGO);
+                grassGOs.Add(grass);
+                if (Random.value < 0.05f)
+                {
+                    Tree tree = new Tree(vertexPositions[i], meshGO);
+                    spawnableGOs.Add(tree);
+                    spawnablePoints[i] = false;
+                }
             }
         }
     }
@@ -388,7 +399,7 @@ public class Chunk
     }
     void JoinedMesh()
     {
-    
+
         /*
             1    2
             +----+

@@ -29,7 +29,9 @@ public class Tree
 
         // if(sTreePrefabs.Length != 0)
         float yRotDeg = Random.Range(0, 360);
-        Quaternion treeRot = Quaternion.Euler(0, yRotDeg, 0);
+        float xRotDeg = Random.Range(0, 10);
+        float zRotDeg = Random.Range(0, 10);
+        Quaternion treeRot = Quaternion.Euler(xRotDeg, yRotDeg, zRotDeg);
         mTreeGO = UnityEngine.GameObject.Instantiate(sTreePrefabs[mTreeIndex], mWorldPos, treeRot);
         mTreeGO.layer = sGroundLayer.value >> 5;
         mCollider = mTreeGO.GetComponent<Collider>();
