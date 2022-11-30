@@ -5,12 +5,18 @@ using UnityEngine.SceneManagement;
 
 public class PlayerTest_Script : MonoBehaviour
 {
+    enum RunTypeE
+    {
+        terrain, enemy, empty
+    }
+
 
     GameData_Script gameData;
+
+    [SerializeField] private RunTypeE runTypeE; 
     [SerializeField] private InputManager_Script inputManager_Script;
     [SerializeField] private Player_Script player_Script;
     [SerializeField] private Enemy_Script enemy_Script;
-
     [SerializeField] private Camera_Script camera_Script;
     [SerializeField] private TerrainManager_Script terrainManager_Script;
     //--------------------------//
@@ -23,28 +29,30 @@ public class PlayerTest_Script : MonoBehaviour
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
-        bool terrainTest = true;
-
-        if (terrainTest)
+        switch(runTypeE)
         {
-            inputManager_Script.enabled = true;
-            player_Script.enabled = true;
-            camera_Script.enabled = true;
-            terrainManager_Script.enabled = true;
-
-            enemy_Script.enabled = false;
+            case RunTypeE.terrain:
+                inputManager_Script.enabled = true;
+                player_Script.enabled = true;
+                camera_Script.enabled = true;
+                terrainManager_Script.enabled = true;
+                enemy_Script.enabled = false;
+                break;
+            case RunTypeE.enemy:
+                enemy_Script.enabled = true;
+                inputManager_Script.enabled = false;
+                player_Script.enabled = false;
+                camera_Script.enabled = false;
+                terrainManager_Script.enabled = false; 
+                break;
+            case RunTypeE.empty:
+                inputManager_Script.enabled = false;
+                player_Script.enabled = false;
+                camera_Script.enabled = false;
+                terrainManager_Script.enabled = false;
+                enemy_Script.enabled = false;
+            break;
         }
-        else
-        {
-            enemy_Script.enabled = true;
-
-            inputManager_Script.enabled = false;
-            player_Script.enabled = false;
-            camera_Script.enabled = false;
-            terrainManager_Script.enabled = false;
-        }
-
-
     }
 
 }

@@ -66,6 +66,7 @@
      <Compile Include="Assets\Scripts\Pathfinding_Fol\Pathfinding_Script.cs" />
      <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Terrain_Fol\Chunk_Fol\TerrainDynamicLoad.cs" />
+     <Compile Include="Assets\Scripts\PlayerTest_Fol\Terrain_Fol\Tree_Fol\Grass.cs" />
      <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMPro_InstructionOverlay.cs" />
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Terrain_Fol\Tree_Fol\Tree.cs" />
      <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />
@@ -109,7 +110,6 @@
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Enemy_Fol\Enemy_AI.cs" />
      <Compile Include="Assets\Scripts\PlayerTest_Fol\Inputs\ArrowInput.cs" />
      <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
-     <Compile Include="Assets\Scripts\PlayerTest_Fol\Terrain_Fol\Tree_Fol\Grass.cs" />
      <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
