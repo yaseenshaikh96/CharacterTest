@@ -246,8 +246,8 @@ public class Chunk
         {
             if (spawnablePoints[i])
             {
-                Grass grass = new Grass(vertexPositions[i], meshGO);
-                grassGOs.Add(grass);
+                // Grass grass = new Grass(vertexPositions[i], meshGO);
+                // grassGOs.Add(grass);
                 if (Random.value < 0.05f)
                 {
                     Tree tree = new Tree(vertexPositions[i], meshGO);

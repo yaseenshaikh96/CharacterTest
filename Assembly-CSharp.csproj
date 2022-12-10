@@ -120,6 +120,7 @@
      <None Include="Assets\Materials\playerTest_Fol\Shaders\Regular\MyShader_Include.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+     <None Include="Assets\Materials\playerTest_Fol\Shaders\Vertex_Color\noise_perlin.cginc" />
      <None Include="Assets\Materials\playerTest_Fol\Shaders\Grass\grass_Shad.shader" />
      <None Include="Assets\Scripts\ShaderTest_Fol\Shaders\MyShader.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
