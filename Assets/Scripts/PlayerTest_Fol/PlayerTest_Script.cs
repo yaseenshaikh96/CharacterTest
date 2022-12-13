@@ -7,7 +7,7 @@ public class PlayerTest_Script : MonoBehaviour
 {
     enum RunTypeE
     {
-        terrain, enemy, empty
+        terrain, enemy, empty, animation
     }
 
 
@@ -23,9 +23,9 @@ public class PlayerTest_Script : MonoBehaviour
 
     void Start()
     {
-        // QualitySettings.vSyncCount = 1;
-        // Application.targetFrameRate = 30;
- 
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = 30;
+  
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(SceneNameEnum.PlayerTest_Scene.ToString()));
         gameData = GameData_Script.instance;
 
@@ -51,7 +51,14 @@ public class PlayerTest_Script : MonoBehaviour
                 camera_Script.enabled = false;
                 terrainManager_Script.enabled = false;
                 enemy_Script.enabled = false;
-            break;
+                break;
+            case RunTypeE.animation:
+                inputManager_Script.enabled = true;
+                player_Script.enabled = true;
+                camera_Script.enabled = true;
+                terrainManager_Script.enabled = false;
+                enemy_Script.enabled = false;
+                break;
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Camera cameraMain;
+    [SerializeField] private Animator playerAnimator;
 
     //--------------------------------------------------------------------------------------------//
 
@@ -15,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         characterController.enabled = true;
-        PlayerState.Init(this, characterController);
+        PlayerState.Init(this, characterController, playerAnimator);
     }
 
     void Update()
@@ -165,11 +167,13 @@ public class PlayerMovement : MonoBehaviour
         public static CharacterController characterController { get; private set; }
         private static PlayerState[] playerStates;
         public static PlayerState currentPlayerState { get; private set; }
+        public static Animator playerAnimator { get; private set; }
 
-        public static void Init(PlayerMovement pm, CharacterController cc)
+        public static void Init(PlayerMovement pm, CharacterController cc, Animator Ani)
         {
             playerMovement = pm;
             characterController = cc;
+            playerAnimator = Ani;
 
             playerStates = new PlayerState[10];
             playerStates[0] = new PSIdle();
@@ -200,7 +204,11 @@ public class PlayerMovement : MonoBehaviour
             currentPlayerState = playerStates[(int)newState];
             currentPlayerState.Initialize();
         }
-
+        public static void SetAnimationTrigger(string triggerName)
+        {
+            Debug.Log(triggerName);
+            playerAnimator.SetTrigger(triggerName);
+        }
         public abstract void Action();
         public abstract void CheckForSwitch();
         public abstract void Initialize();
@@ -218,11 +226,20 @@ public class PlayerMovement : MonoBehaviour
         public override void CheckForSwitch()
         {
             if (playerMovement.IsFallingHard())
+            {
+                SetAnimationTrigger("Fall");
                 SwitchState(PlayerStateE.falling);
+            }
             if (playerMovement.IsTryingJumping())
+            {
+                SetAnimationTrigger("Jump_Up");
                 SwitchState(PlayerStateE.jumping);
+            }
             if (playerMovement.IsTryingMoving())
+            {
+                SetAnimationTrigger("Idle_To_Walk");
                 SwitchState(PlayerStateE.walking);
+            }
 
         }
     }
@@ -265,19 +282,27 @@ public class PlayerMovement : MonoBehaviour
         public override void CheckForSwitch()
         {
             if (playerMovement.IsFallingHard())
+            {
+                SetAnimationTrigger("Fall");
                 SwitchState(PlayerStateE.falling);
+            }
             if (playerMovement.IsTryingJumping())
             {
+                SetAnimationTrigger("Jump_Up");
                 skippingReset = true;
                 SwitchState(PlayerStateE.jumping);
             }
             if(playerMovement.IsTryingRunning())
             {
+                SetAnimationTrigger("Walk_To_Run");
                 skippingReset= true;
                 SwitchState(PlayerStateE.running);
             }
             if (!isMoving)
+            {
+                SetAnimationTrigger("Walk_To_Idle");
                 SwitchState(PlayerStateE.idle);
+            }
         }
     }
 
@@ -319,16 +344,22 @@ public class PlayerMovement : MonoBehaviour
         public override void CheckForSwitch()
         {
             if(playerMovement.IsFallingHard())
+            {
+                SetAnimationTrigger("Fall");
                 SwitchState(PlayerStateE.falling);
-
+            }
             if(playerMovement.IsTryingJumping())
             {
+                SetAnimationTrigger("Jump_Up");
                 skippingReset = true;
                 SwitchState(PlayerStateE.jumping);
             }
 
             if(!isRunning)
+            {
+                SetAnimationTrigger("Run_To_Walk");
                 SwitchState(PlayerStateE.walking);
+            }
         }
     }
 
@@ -356,9 +387,15 @@ public class PlayerMovement : MonoBehaviour
             if (!playerMovement.IsFallingHard())
             {
                 if (isGoingToRevocery)
+                {
+                    SetAnimationTrigger("Air_To_land");
                     SwitchState(PlayerStateE.fallRecovery);
+                }
                 else
+                {
+                    SetAnimationTrigger("Fall_To_Idle_No_Recovery");
                     SwitchState(PlayerStateE.idle);
+                }
             }
         }
     }
@@ -383,9 +420,15 @@ public class PlayerMovement : MonoBehaviour
         public override void CheckForSwitch()
         {
             if (playerMovement.IsFallingHard())
+            {
+                SetAnimationTrigger("To_Fall");
                 SwitchState(PlayerStateE.falling);
+            }
             if (isRecovered)
+            {
+                SetAnimationTrigger("Fall_Recovered");
                 SwitchState(PlayerStateE.idle);
+            }
         }
     }
     private class PSJumping : PlayerState
@@ -420,7 +463,10 @@ public class PlayerMovement : MonoBehaviour
         public override void CheckForSwitch()
         {
             if (isJumpOver)
+            {
+                SetAnimationTrigger("In_Air");
                 SwitchState(PlayerStateE.idle);
+            }
         }
     }
 }

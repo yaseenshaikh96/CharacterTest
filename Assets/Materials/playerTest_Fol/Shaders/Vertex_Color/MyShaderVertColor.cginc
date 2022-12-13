@@ -31,7 +31,7 @@ fixed _Fernel;
 fixed fernel;
 fixed _Saturation;
 
-#define MAX_NOISE_VALUE 0.08f
+#define MAX_NOISE_VALUE 0.15f
 #define NOISE_STEP 5
 
 v2f vert (appdata v)
@@ -78,7 +78,7 @@ fixed4 frag (v2f i) : SV_Target
     output = output * diffuse;
     output = output + (specular * attenuation);
 
-    output += noiseColor;
+    output += (noiseColor * i.vertColor);
 
     #ifdef BASE_PASS
     
