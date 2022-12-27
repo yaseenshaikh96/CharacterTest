@@ -16,7 +16,7 @@ public class PlayerTest_Script : MonoBehaviour
     [SerializeField] private RunTypeE runTypeE; 
     [SerializeField] private InputManager_Script inputManager_Script;
     [SerializeField] private Player_Script player_Script;
-    [SerializeField] private Enemy_Script enemy_Script;
+    [SerializeField] private EnemyManager_Script enemyManager_Script;
     [SerializeField] private Camera_Script camera_Script;
     [SerializeField] private TerrainManager_Script terrainManager_Script;
     //--------------------------//
@@ -36,10 +36,10 @@ public class PlayerTest_Script : MonoBehaviour
                 player_Script.enabled = true;
                 camera_Script.enabled = true;
                 terrainManager_Script.enabled = true;
-                enemy_Script.enabled = false;
+                enemyManager_Script.enabled = false;
                 break;
             case RunTypeE.enemy:
-                enemy_Script.enabled = true;
+                enemyManager_Script.enabled = true;
                 inputManager_Script.enabled = false;
                 player_Script.enabled = false;
                 camera_Script.enabled = false;
@@ -50,14 +50,14 @@ public class PlayerTest_Script : MonoBehaviour
                 player_Script.enabled = false;
                 camera_Script.enabled = false;
                 terrainManager_Script.enabled = false;
-                enemy_Script.enabled = false;
+                enemyManager_Script.enabled = false;
                 break;
             case RunTypeE.animation:
                 inputManager_Script.enabled = true;
                 player_Script.enabled = true;
                 camera_Script.enabled = true;
                 terrainManager_Script.enabled = false;
-                enemy_Script.enabled = false;
+                enemyManager_Script.enabled = false;
                 break;
         }
     }

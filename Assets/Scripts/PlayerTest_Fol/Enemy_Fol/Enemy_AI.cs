@@ -4,22 +4,26 @@ using UnityEngine;
 
 public class Enemy_AI : MonoBehaviour
 {
-    [SerializeField] CharacterController enemyController;
-    [SerializeField] GameObject playerGO, EnemyGO;
-    [SerializeField] LayerMask groundLayer;
-    [SerializeField, Range(10, 200)] float unloadDistance;
-    [SerializeField] float chasingDistance;
-    [SerializeField] float attackDistance;
+    public static EnemySpawner enemySpawner;
+    CharacterController enemyController;
+    GameObject EnemyGO;
+    EnemyState enemyState;
+
     //------------------------------------------------------------------//
-    Vector3 playerWorldPos, enemyWorldPosNew, enemyWorldPosOld;
-    Vector2 playerWorldPos2D, enemyWorldPos2D;
+    Vector3 enemyWorldPosNew, enemyWorldPosOld;
+    Vector2 enemyWorldPos2D;
     Vector3 previousDirOfMotion;
     //-----------------------------------------------------------------//
     void Start()
     {
-        playerWorldPos2D = new Vector2();
+        enemyController = GetComponent<CharacterController>();
+        EnemyGO = this.gameObject;
+
         enemyWorldPos2D = new Vector2();
-        EnemyState.Init(this, enemyController);
+        enemyWorldPosNew = new Vector3();
+
+        enemyState = new EnemyState();
+        enemyState.Set(this, enemyController);
     }
     void Update()
     {
@@ -28,29 +32,23 @@ public class Enemy_AI : MonoBehaviour
             return;
         }
         UpdateVariables();
-        EnemyState.Update();
+        enemyState.Update();
     }
     void UpdateVariables()
     {
-        playerWorldPos = playerGO.transform.position;
-        playerWorldPos2D.x = playerWorldPos.x;
-        playerWorldPos2D.y = playerWorldPos.z;
-
-        enemyWorldPosOld = enemyWorldPosNew;
-        
+        enemyWorldPosOld = enemyWorldPosNew;   
         enemyWorldPosNew = EnemyGO.transform.position;
         enemyWorldPos2D.x = enemyWorldPosNew.x;
         enemyWorldPos2D.y = enemyWorldPosNew.z;
-
     }
     //-----------------------------------------------------------------//
     bool IsOutOfRange()
     {
-        return Vector2.Distance(playerWorldPos2D, enemyWorldPos2D) > unloadDistance;
+        return Vector2.Distance(enemySpawner.playerWorldPos2D, enemyWorldPos2D) > enemySpawner.unloadDistance;
     }
     void AIMove(float magnitude)
     {
-        Vector3 moveDirection= playerWorldPos - enemyWorldPosNew;
+        Vector3 moveDirection = enemySpawner.playerWorldPos - enemyWorldPosNew;
         moveDirection.y = 0;
         moveDirection = moveDirection.normalized;
         Move(moveDirection, magnitude); 
@@ -81,7 +79,7 @@ public class Enemy_AI : MonoBehaviour
         point += Vector3.up * 0.1f;
 
         RaycastHit raycastHit;
-        return !Physics.SphereCast(point, enemyController.radius, Vector3.down, out raycastHit, 0.1f + fallDist, groundLayer);
+        return !Physics.SphereCast(point, enemyController.radius, Vector3.down, out raycastHit, 0.1f + fallDist, enemySpawner.groundLayer);
     }
     //-------------------------------------------------------------------------//
     TimeVariant gravity = new TimeVariant(0, 40, 2);
@@ -106,11 +104,11 @@ public class Enemy_AI : MonoBehaviour
     //-------------------------------------------------------------------------//
     bool IsInAttackRange()
     {
-        return Vector3.Distance(playerWorldPos, enemyWorldPosNew) < attackDistance;
+        return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.attackDistance;
     }
     bool IsInChasingDistance()
     {
-        return Vector3.Distance(playerWorldPos, enemyWorldPosNew) < chasingDistance;
+        return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.chasingDistance;
     }
 
     //-------------------------------------------------------------------------//
@@ -118,53 +116,66 @@ public class Enemy_AI : MonoBehaviour
     {
         idle, chasing, falling, fallRecovery, attacking
     }
-    private abstract class EnemyState
-    {
-        public static Enemy_AI enemy_AI { get; private set; }
-        public static CharacterController enemyController { get; private set; }
-        private static EnemyState[] enemyStates;
-        public static EnemyState currentEnemyState { get; private set; }
 
-        public static void Init(Enemy_AI ai, CharacterController ec)
+    public abstract class IEnemyState
+    {
+        public abstract void Action();
+        public abstract void CheckForSwitch();
+        public abstract void Initialize();
+        public abstract void Terminate();
+    }
+
+    private class EnemyState
+    {
+        public Enemy_AI enemy_AI { get; private set; }
+        public CharacterController enemyController { get; private set; }
+        private IEnemyState[] enemyStates;
+        public IEnemyState currentEnemyState { get; private set; }
+
+        public EnemyState()
+        {}
+
+        public void Set(Enemy_AI ai, CharacterController ec)
         {
             enemy_AI = ai;
             enemyController = ec;
 
-            enemyStates = new EnemyState[10];
-            enemyStates[0] = new ESIdle();
-            enemyStates[1] = new ESChasing();
-            enemyStates[2] = new ESFalling();
-            enemyStates[3] = new ESFallRecovery();
-            enemyStates[4] = new ESAttacking();
+            enemyStates = new IEnemyState[10];
+            enemyStates[0] = new ESIdle(this);
+            enemyStates[1] = new ESChasing(this);
+            enemyStates[2] = new ESFalling(this);
+            enemyStates[3] = new ESFallRecovery(this);
+            enemyStates[4] = new ESAttacking(this);
 
             currentEnemyState = enemyStates[0];
+
         }
-        public static void Update()
+        public void Update()
         {
             currentEnemyState.Action();
             currentEnemyState.CheckForSwitch();
 
-            Debug.Log("State: " + currentEnemyState);
+            //Debug.Log("State: " + currentEnemyState);
 
             if (enemy_AI.IsFallingSoft())
                 enemy_AI.ApplyGravity();
             else
                 enemy_AI.ResetGravity();
         }
-        protected void SwitchState(EnemyStateE newState)
+        public void SwitchState(EnemyStateE newState)
         {
             currentEnemyState.Terminate();
             currentEnemyState = enemyStates[(int)newState];
             currentEnemyState.Initialize();
         }
-
-        public abstract void Action();
-        public abstract void CheckForSwitch();
-        public abstract void Initialize();
-        public abstract void Terminate();
     }
-    class ESIdle : EnemyState
+    class ESIdle : IEnemyState
     {
+        EnemyState parent;
+        public ESIdle(EnemyState _parent)
+        {
+            parent = _parent;
+        }
         public override void Action()
         {
         }
@@ -174,23 +185,26 @@ public class Enemy_AI : MonoBehaviour
         { }
         public override void CheckForSwitch()
         {
-            if(enemy_AI.IsFallingHard())
-                SwitchState(EnemyStateE.falling);
-            if(enemy_AI.IsInChasingDistance())
-                SwitchState(EnemyStateE.chasing);
+            if(parent.enemy_AI.IsFallingHard())
+                parent.SwitchState(EnemyStateE.falling);
+            if(parent.enemy_AI.IsInChasingDistance())
+                parent.SwitchState(EnemyStateE.chasing);
         }
     }
-    class ESChasing : EnemyState
+    class ESChasing : IEnemyState
     {
+        EnemyState parent;
         bool isMoving = false;
         TimeVariant speed;
-        public ESChasing()
+        public ESChasing(EnemyState _parent)
         {
+            parent = _parent;
             speed = new TimeVariant(0, 10, 2);
         }
         public override void Action()
         {
-            if (enemy_AI.IsInChasingDistance())
+            Debug.Log(parent);
+            if (parent.enemy_AI.IsInChasingDistance())
                 speed.Increment(1);
             else
                 speed.Decrement(5);
@@ -202,7 +216,7 @@ public class Enemy_AI : MonoBehaviour
                 isMoving = false;
                 return;
             }
-            enemy_AI.AIMove(speed.currentValue);
+            parent.enemy_AI.AIMove(speed.currentValue);
         }
         public override void Initialize()
         {
@@ -214,20 +228,24 @@ public class Enemy_AI : MonoBehaviour
         }
         public override void CheckForSwitch()
         {
-            if (enemy_AI.IsFallingHard())
-                SwitchState(EnemyStateE.falling);
-            if(enemy_AI.IsInAttackRange())
-                SwitchState(EnemyStateE.attacking);
+            if (parent.enemy_AI.IsFallingHard())
+                parent.SwitchState(EnemyStateE.falling);
+            if(parent.enemy_AI.IsInAttackRange())
+                parent.SwitchState(EnemyStateE.attacking);
             if (!isMoving)
-                SwitchState(EnemyStateE.idle);
+                parent.SwitchState(EnemyStateE.idle);
         }
     }
-    class ESFalling : EnemyState
+    class ESFalling : IEnemyState
     {
-       const float timeSinceFallingToGoToRecovery = 1f;
+        EnemyState parent;
+        const float timeSinceFallingToGoToRecovery = 1f;
         float timeSinceStart = 0;
         bool isGoingToRevocery = false;
-
+        public ESFalling(EnemyState _parent)
+        {
+            parent = _parent;
+        }
         public override void Action()
         {
             timeSinceStart += Time.deltaTime;
@@ -243,20 +261,27 @@ public class Enemy_AI : MonoBehaviour
         }
         public override void CheckForSwitch()
         {
-            if (!enemy_AI.IsFallingHard())
+            if (!parent.enemy_AI.IsFallingHard())
             {
                 if (isGoingToRevocery)
-                    SwitchState(EnemyStateE.fallRecovery);
+                    parent.SwitchState(EnemyStateE.fallRecovery);
                 else
-                    SwitchState(EnemyStateE.idle);
+                    parent.SwitchState(EnemyStateE.idle);
             }
         }
     }
-    class ESFallRecovery : EnemyState
+    class ESFallRecovery : IEnemyState
     {
+        EnemyState parent;
         const float timeToRecovery = 2; //sec
         float timeSinceStart = 0;
         bool isRecovered = false;
+
+        public ESFallRecovery(EnemyState _parent)
+        {
+            parent = _parent;
+        }
+
         public override void Action()
         {
             timeSinceStart += Time.deltaTime;
@@ -272,14 +297,19 @@ public class Enemy_AI : MonoBehaviour
         }
         public override void CheckForSwitch()
         {
-            if (enemy_AI.IsFallingHard())
-                SwitchState(EnemyStateE.falling);
+            if (parent.enemy_AI.IsFallingHard())
+                parent.SwitchState(EnemyStateE.falling);
             if (isRecovered)
-                SwitchState(EnemyStateE.idle);
+                parent.SwitchState(EnemyStateE.idle);
         }
     }
-    class ESAttacking : EnemyState
+    class ESAttacking : IEnemyState
     {
+        EnemyState parent;
+        public ESAttacking(EnemyState _parent)
+        {
+            parent = _parent;
+        }
         public override void Action()
         {
             // attack!
@@ -290,10 +320,12 @@ public class Enemy_AI : MonoBehaviour
         { }
         public override void CheckForSwitch()
         {
-            if(enemy_AI.IsFallingHard())
-                SwitchState(EnemyStateE.falling);
-            if(!enemy_AI.IsInAttackRange())
-                SwitchState(EnemyStateE.idle);
+            if(parent.enemy_AI.IsFallingHard())
+                parent.SwitchState(EnemyStateE.falling);
+            if(!parent.enemy_AI.IsInAttackRange())
+                parent.SwitchState(EnemyStateE.idle);
         }
     }
 }
+
+
