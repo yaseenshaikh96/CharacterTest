@@ -206,8 +206,9 @@ public class PlayerMovement : MonoBehaviour
         }
         public static void SetAnimationTrigger(string triggerName)
         {
-            Debug.Log(triggerName);
-            playerAnimator.SetTrigger(triggerName);
+            return;
+            //Debug.Log(triggerName);
+            //playerAnimator.SetTrigger(triggerName);
         }
         public abstract void Action();
         public abstract void CheckForSwitch();

@@ -45,7 +45,7 @@ public class Chunk
     List<Tree> spawnableGOs;
     List<Grass> grassGOs;
     GameObject waterParent;
-    bool[] spawnablePoints;
+    public bool[] spawnablePoints;
     public Vector3[] vertexPositions;
     Vector3[] vertices;
     int[] triangles;
@@ -242,23 +242,60 @@ public class Chunk
     void SpawnSpawnable()
     {
         Random.InitState(mNoiseData.seed);
-        for (int i = 0; i < spawnablePoints.Length; i++)
+        for(int pointIndexX = 1; pointIndexX < sPointsPerChunk - 1; pointIndexX++)
         {
-            if (spawnablePoints[i])
+            for(int pointIndexZ = 1; pointIndexZ < sPointsPerChunk - 1; pointIndexZ++)
             {
-                // Grass grass = new Grass(vertexPositions[i], meshGO);
-                // grassGOs.Add(grass);
-                if (Random.value < 0.05f)
+                int truePointIndex = (pointIndexX * sPointsPerChunk) + pointIndexZ;
+                if (spawnablePoints[truePointIndex])
                 {
-                    Tree tree = new Tree(vertexPositions[i], meshGO);
-                    spawnableGOs.Add(tree);
-                    spawnablePoints[i] = false;
+                    // Grass grass = new Grass(vertexPositions[i], meshGO);
+                    // grassGOs.Add(grass);
+                    if (Random.value < 0.05f)
+                    {
+                        Tree tree = new Tree(vertexPositions[truePointIndex], meshGO);
+                        spawnableGOs.Add(tree);
+                        spawnablePoints[truePointIndex] = false;
+                    }
                 }
             }
-        }
+        }        
     }
     void FindSpawnablePoints()
     {
+        Vector3[] paddedVertexPositions = new Vector3[(sVerticesPosIndexCount + 2) * (sVerticesPosIndexCount + 2)];
+        for(int x = 0; x< sVerticesPosIndexCount; x++)
+        {
+            for(int z = 0; z< sVerticesPosIndexCount; z++)
+            {
+                int index = (x * (sVerticesPosIndexCount)) + z;
+                int paddedIndex = (x * (sVerticesPosIndexCount + 1)) + (z + 1);
+
+                paddedVertexPositions[index] = vertexPositions[index];
+            }
+        }
+
+        Debug.Log("vertex Posiitons: ");
+        foreach( var pos in vertexPositions)
+            Debug.Log("pos: " + pos);
+        Debug.Log("-------------");
+        foreach(var padPos in paddedVertexPositions)
+            Debug.Log("padPos: " + padPos);
+
+
+        for(int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
+        {
+            Vector3 currentPoint1 = vertexPositions[xIndex];
+            if(currentPoint1.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
+                currentPoint1.y < layers[4].curveEvaledHeight * sHeightMultiplier)
+                spawnablePoints[xIndex] = true;
+    
+            Vector3 currentPoint2 = vertexPositions[spawnablePoints.Length - 1 - xIndex];
+            if(currentPoint2.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
+                currentPoint2.y < layers[4].curveEvaledHeight * sHeightMultiplier)
+                spawnablePoints[spawnablePoints.Length - 1 - xIndex] = true;
+        }
+
         float[] neighbourPointsY = new float[8];
         for (int xIndex = 1; xIndex < sPointsPerChunk - 1; xIndex++)
         {

@@ -7,7 +7,7 @@ public class PlayerTest_Script : MonoBehaviour
 {
     enum RunTypeE
     {
-        terrain, enemy, empty, animation
+        terrain, enemy, empty, animation, playerAndEnemy
     }
 
 
@@ -31,6 +31,13 @@ public class PlayerTest_Script : MonoBehaviour
 
         switch(runTypeE)
         {
+            case RunTypeE.playerAndEnemy:
+                inputManager_Script.enabled = true;
+                player_Script.enabled = true;
+                camera_Script.enabled = true;
+                terrainManager_Script.enabled = true;
+                enemyManager_Script.enabled = true;
+                break;
             case RunTypeE.terrain:
                 inputManager_Script.enabled = true;
                 player_Script.enabled = true;
