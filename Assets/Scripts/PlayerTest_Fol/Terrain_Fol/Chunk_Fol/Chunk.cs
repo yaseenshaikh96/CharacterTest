@@ -263,13 +263,10 @@ public class Chunk
     }
     void FindSpawnablePoints()
     {
-
-        
         float[] neighbourPointsYfor5 = new float[5];
 
         for(int zIndex = 1; zIndex < sPointsPerChunk - 1; zIndex++)
         {
-
             Vector3 currentPoint1 = vertexPositions[zIndex];
             
             neighbourPointsYfor5[0] = vertexPositions[zIndex + 1].y;
@@ -286,26 +283,26 @@ public class Chunk
                 currentPoint1.y < layers[4].curveEvaledHeight * sHeightMultiplier)
                 spawnablePoints[zIndex] = true;
         }
-        
-        for(int xIndex = 2*sPointsPerChunk-1; xIndex < spawnablePoints.Length-1; xIndex += sPointsPerChunk)
+
+        for(int xIndex = 1; xIndex < sPointsPerChunk - 1; xIndex++)
         {
-            Vector3 currentPoint1 = vertexPositions[xIndex];
+            int currentIndex = (xIndex * sPointsPerChunk) + 0;
+            Vector3 currentPoint1 = vertexPositions[currentIndex];
 
-            neighbourPointsYfor5[0] = vertexPositions[xIndex + sPointsPerChunk].y;
-            neighbourPointsYfor5[1] = vertexPositions[xIndex - sPointsPerChunk].y;
+            neighbourPointsYfor5[0] = vertexPositions[currentIndex + sPointsPerChunk].y;
+            neighbourPointsYfor5[1] = vertexPositions[currentIndex - sPointsPerChunk].y;
 
-            neighbourPointsYfor5[2] = vertexPositions[xIndex - 1 + sPointsPerChunk].y;
-            neighbourPointsYfor5[3] = vertexPositions[xIndex - 1].y;
-            neighbourPointsYfor5[4] = vertexPositions[xIndex - 1 - sPointsPerChunk].y;
+            neighbourPointsYfor5[2] = vertexPositions[currentIndex + 1 + sPointsPerChunk].y;
+            neighbourPointsYfor5[3] = vertexPositions[currentIndex + 1].y;
+            neighbourPointsYfor5[4] = vertexPositions[currentIndex + 1 - sPointsPerChunk].y;
 
             float deviation2 = FindDeviation(neighbourPointsYfor5);
            
             if(deviation2 < 1.5f &&
                 currentPoint1.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
                 currentPoint1.y < layers[4].curveEvaledHeight * sHeightMultiplier)
-                spawnablePoints[xIndex] = true;
+                spawnablePoints[currentIndex] = true;
         }
-        
         
 
         float[] neighbourPointsY = new float[8];

@@ -94,16 +94,6 @@ public class EnemySpawner : MonoBehaviour
         
             }
         }
-
-        foreach(var node in positionNodesWithSpawns)
-        {
-            if(node.Value)
-            {
-                GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.transform.position = node.Key;
-            }
-        }
-
     }
 
     Vector3 GetChunkIndexFromPosition(Vector3 position)
