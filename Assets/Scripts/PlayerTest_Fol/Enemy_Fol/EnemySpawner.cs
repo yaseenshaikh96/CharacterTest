@@ -72,7 +72,6 @@ public class EnemySpawner : MonoBehaviour
         float chunkZMinIndex = playerChunkIndex.z - ((AIChunkCount / 2) * chunkSize);
         float chunkZMaxIndex = playerChunkIndex.z + ((AIChunkCount / 2) * chunkSize);
 
-        Debug.Log("player chunk index: " + playerChunkIndex);
 
         for(float xIndex = chunkXMinIndex; xIndex <= chunkXMaxIndex; xIndex += chunkSize)
         {
@@ -81,8 +80,6 @@ public class EnemySpawner : MonoBehaviour
                 Vector3 currentChunkPos = new Vector3(xIndex, 0, zIndex) / chunkSize;
                 Chunk currentChunk;
                 bool success = loadedChunks.TryGetValue(currentChunkPos, out currentChunk);
-                
-                Debug.Log("position: " + currentChunkPos + " success: " + success);
                 
             
                 for(int pointIndexX = 0; pointIndexX < pointsPerChunk - 1; pointIndexX++)

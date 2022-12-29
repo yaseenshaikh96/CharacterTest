@@ -263,38 +263,50 @@ public class Chunk
     }
     void FindSpawnablePoints()
     {
-        Vector3[] paddedVertexPositions = new Vector3[(sVerticesPosIndexCount + 2) * (sVerticesPosIndexCount + 2)];
-        for(int x = 0; x< sVerticesPosIndexCount; x++)
+
+        
+        float[] neighbourPointsYfor5 = new float[5];
+
+        for(int zIndex = 1; zIndex < sPointsPerChunk - 1; zIndex++)
         {
-            for(int z = 0; z< sVerticesPosIndexCount; z++)
-            {
-                int index = (x * (sVerticesPosIndexCount)) + z;
-                int paddedIndex = (x * (sVerticesPosIndexCount + 1)) + (z + 1);
 
-                paddedVertexPositions[index] = vertexPositions[index];
-            }
+            Vector3 currentPoint1 = vertexPositions[zIndex];
+            
+            neighbourPointsYfor5[0] = vertexPositions[zIndex + 1].y;
+            neighbourPointsYfor5[1] = vertexPositions[zIndex - 1].y;
+
+            neighbourPointsYfor5[2] = vertexPositions[sPointsPerChunk + zIndex - 1].y;
+            neighbourPointsYfor5[3] = vertexPositions[sPointsPerChunk + zIndex].y;
+            neighbourPointsYfor5[4] = vertexPositions[sPointsPerChunk + zIndex + 1].y;
+
+            float deviation1 = FindDeviation(neighbourPointsYfor5);
+           
+            if(deviation1 < 1.5f &&
+                currentPoint1.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
+                currentPoint1.y < layers[4].curveEvaledHeight * sHeightMultiplier)
+                spawnablePoints[zIndex] = true;
         }
-
-        Debug.Log("vertex Posiitons: ");
-        foreach( var pos in vertexPositions)
-            Debug.Log("pos: " + pos);
-        Debug.Log("-------------");
-        foreach(var padPos in paddedVertexPositions)
-            Debug.Log("padPos: " + padPos);
-
-
-        for(int xIndex = 0; xIndex < sPointsPerChunk; xIndex++)
+        
+        for(int xIndex = 2*sPointsPerChunk-1; xIndex < spawnablePoints.Length-1; xIndex += sPointsPerChunk)
         {
             Vector3 currentPoint1 = vertexPositions[xIndex];
-            if(currentPoint1.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
+
+            neighbourPointsYfor5[0] = vertexPositions[xIndex + sPointsPerChunk].y;
+            neighbourPointsYfor5[1] = vertexPositions[xIndex - sPointsPerChunk].y;
+
+            neighbourPointsYfor5[2] = vertexPositions[xIndex - 1 + sPointsPerChunk].y;
+            neighbourPointsYfor5[3] = vertexPositions[xIndex - 1].y;
+            neighbourPointsYfor5[4] = vertexPositions[xIndex - 1 - sPointsPerChunk].y;
+
+            float deviation2 = FindDeviation(neighbourPointsYfor5);
+           
+            if(deviation2 < 1.5f &&
+                currentPoint1.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
                 currentPoint1.y < layers[4].curveEvaledHeight * sHeightMultiplier)
                 spawnablePoints[xIndex] = true;
-    
-            Vector3 currentPoint2 = vertexPositions[spawnablePoints.Length - 1 - xIndex];
-            if(currentPoint2.y > layers[2].curveEvaledHeight * sHeightMultiplier &&
-                currentPoint2.y < layers[4].curveEvaledHeight * sHeightMultiplier)
-                spawnablePoints[spawnablePoints.Length - 1 - xIndex] = true;
         }
+        
+        
 
         float[] neighbourPointsY = new float[8];
         for (int xIndex = 1; xIndex < sPointsPerChunk - 1; xIndex++)
@@ -302,6 +314,7 @@ public class Chunk
             for (int zIndex = 1; zIndex < sPointsPerChunk - 1; zIndex++)
             {
                 int currentIndex = (xIndex * sPointsPerChunk) + zIndex;
+
                 Vector3 currentPoint = vertexPositions[currentIndex];
                 neighbourPointsY[0] = vertexPositions[currentIndex + 1].y;
                 neighbourPointsY[1] = vertexPositions[currentIndex - 1].y;
