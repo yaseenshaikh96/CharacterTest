@@ -46,7 +46,7 @@ public class Chunk
     List<Grass> grassGOs;
     GameObject waterParent;
     bool[] spawnablePoints;
-    Vector3[] vertexPositions;
+    public Vector3[] vertexPositions;
     Vector3[] vertices;
     int[] triangles;
     Color[] colors;

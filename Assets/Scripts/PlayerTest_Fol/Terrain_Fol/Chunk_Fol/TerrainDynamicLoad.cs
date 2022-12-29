@@ -14,7 +14,7 @@ public class TerrainDynamicLoad : MonoBehaviour
     //---------------------------------------------------------------------
     int xPosPlayerInChunk, zPosPlayerInChunk;
     Vector3 playerWorldPos;
-    Dictionary<Vector3, Chunk> loadedChunks, newLoadedChunks;
+    public Dictionary<Vector3, Chunk> loadedChunks, newLoadedChunks;
     void Start()
     {
         loadedChunks = new Dictionary<Vector3, Chunk>();
@@ -121,7 +121,6 @@ public class TerrainDynamicLoad : MonoBehaviour
             else
                 chunk.Value.AddCollider();
         }
-
     }
 }
 /*
