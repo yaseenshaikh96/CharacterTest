@@ -27,10 +27,13 @@ public class Enemy_AI : MonoBehaviour
     }
     void Update()
     {
+        if(enemySpawner == null)
+            return;
+
         if (IsOutOfRange())
         {
-            return;
-        }
+           return;
+       }
         UpdateVariables();
         enemyState.Update();
     }
