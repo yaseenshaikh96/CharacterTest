@@ -2,6 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class CellNode
+{
+    public Vector3 position = Vector3.zero;
+    public bool spawnable = false;
+    public float gScore;
+    public float hScore;
+    public float fScore;
+}
+
 public class Enemy_AI : MonoBehaviour
 {
     public static EnemySpawner enemySpawner;
@@ -13,6 +22,7 @@ public class Enemy_AI : MonoBehaviour
     Vector3 enemyWorldPosNew, enemyWorldPosOld;
     Vector2 enemyWorldPos2D;
     Vector3 previousDirOfMotion;
+    CellNode[,] cellNodes;
     //-----------------------------------------------------------------//
     void Start()
     {
@@ -24,9 +34,26 @@ public class Enemy_AI : MonoBehaviour
 
         enemyState = new EnemyState();
         enemyState.Set(this, enemyController);
+
+        cellNodes = new CellNode[enemySpawner.AIGridSize, enemySpawner.AIGridSize];
+        for(int xIndex=0; xIndex< enemySpawner.AIGridSize; xIndex++)
+            for(int zIndex=0; zIndex< enemySpawner.AIGridSize; zIndex++)
+            cellNodes[xIndex, zIndex] = new CellNode();
+
     }
+
+    float timeSinceLastLoaded = 0;
+    const float timeBtnLoad = 2f;
     void Update()
     {
+        timeSinceLastLoaded += Time.deltaTime;
+        if (timeSinceLastLoaded > timeBtnLoad)
+        {
+            timeSinceLastLoaded = 0;
+            UpdatePositionNodes();
+        }
+
+
         if(enemySpawner == null)
             return;
 
@@ -45,6 +72,7 @@ public class Enemy_AI : MonoBehaviour
         enemyWorldPos2D.y = enemyWorldPosNew.z;
     }
     //-----------------------------------------------------------------//
+
     bool IsOutOfRange()
     {
         return Vector2.Distance(enemySpawner.playerWorldPos2D, enemyWorldPos2D) > enemySpawner.unloadDistance;
@@ -112,6 +140,33 @@ public class Enemy_AI : MonoBehaviour
     bool IsInChasingDistance()
     {
         return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.chasingDistance;
+    }
+
+    //-------------------------------------------------------------------------//
+
+    void UpdatePositionNodes()
+    {
+        int[] indices = enemySpawner.GetIndexFromPosition(enemyWorldPosNew);
+        
+        Debug.Log("Position: " + enemySpawner.positionNodes[indices[0], indices[1]].position);
+
+        GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.transform.position = enemySpawner.positionNodes[indices[0], indices[1]].position;
+        go.transform.localScale = new Vector3(2, 2, 2);
+
+        return;
+
+        for(int xIndex=0; xIndex< enemySpawner.AIGridSize; xIndex++)
+        {
+            for(int zIndex=0; zIndex< enemySpawner.AIGridSize; zIndex++)
+            {
+                int ParentIndexX = 0;
+                int ParentIndexZ = 0;
+
+                cellNodes[xIndex, zIndex].position = enemySpawner.positionNodes[ParentIndexX, ParentIndexZ].position;
+                cellNodes[xIndex, zIndex].spawnable= enemySpawner.positionNodes[ParentIndexX, ParentIndexZ].spawnable;
+            }
+        }
     }
 
     //-------------------------------------------------------------------------//
@@ -206,7 +261,7 @@ public class Enemy_AI : MonoBehaviour
         }
         public override void Action()
         {
-            Debug.Log(parent);
+            //Debug.Log(parent);
             if (parent.enemy_AI.IsInChasingDistance())
                 speed.Increment(1);
             else

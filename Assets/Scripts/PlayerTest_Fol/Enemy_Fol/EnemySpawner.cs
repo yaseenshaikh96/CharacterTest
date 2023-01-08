@@ -2,8 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class PositionNode
+{
+    public Vector3 position = Vector3.zero;
+    public bool spawnable = false;
+}
+
 public class EnemySpawner : MonoBehaviour
 {
+    [SerializeField] Vector3 testPosition;
     [SerializeField] bool update = false;
     [SerializeField] GameObject EnemyPrefab;
     [SerializeField] public GameObject playerGO;
@@ -11,6 +18,7 @@ public class EnemySpawner : MonoBehaviour
     
     [SerializeField] public int AIChunkCount; // 3 => 3X3 centered on player
     [SerializeField] public float unloadDistance;
+    [SerializeField] public int AIGridSize = 20;
     [SerializeField] public int chasingDistance;
     [SerializeField] public float attackDistance;
 
@@ -18,9 +26,8 @@ public class EnemySpawner : MonoBehaviour
     public Vector3 playerWorldPos {get; private set;}
 
 
-    Dictionary<Vector3, bool> positionNodesWithSpawns;
     Dictionary<Vector3, Chunk> loadedChunks;
-    public Vector3[,] positionNodes;
+    public PositionNode[,] positionNodes;
     ChunkManager chunkManager;
     int pointsPerChunk;
     float chunkSize;
@@ -36,19 +43,24 @@ public class EnemySpawner : MonoBehaviour
 
         playerWorldPos = new Vector3();
         playerWorldPos2D = new Vector2();
-        positionNodes = new Vector3[pointsPerChunk * AIChunkCount, pointsPerChunk * AIChunkCount];
-        positionNodesWithSpawns = new Dictionary<Vector3, bool>((2 * pointsPerChunk) * (2 * AIChunkCount));
+        positionNodes = new PositionNode[pointsPerChunk * AIChunkCount, pointsPerChunk * AIChunkCount];
+        for(int xIndex = 0; xIndex < pointsPerChunk * AIChunkCount; xIndex++)
+        {
+            for(int zIndex = 0; zIndex < pointsPerChunk * AIChunkCount; zIndex ++)
+            {
+                positionNodes[xIndex, zIndex] = new PositionNode();
+            }
+        }
 
         Enemy_AI.enemySpawner = this;
 
 
         // spawn enemies
-        Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
+        //Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
     }
 
     void Update()
     {
-
         // update player pos
         playerWorldPos = playerGO.transform.position;
         playerWorldPos2D = new Vector2(playerGO.transform.position.x, playerGO.transform.position.z);
@@ -57,6 +69,7 @@ public class EnemySpawner : MonoBehaviour
         {
             update = false;
             UpdatePositionNodes();
+            GetIndexFromPosition(testPosition);
         }
     }
 
@@ -65,55 +78,81 @@ public class EnemySpawner : MonoBehaviour
         loadedChunks = GameObject.Find("TerrainManagerGO").GetComponent<TerrainDynamicLoad>().loadedChunks;
 
         Vector3 playerChunkIndex = GetChunkIndexFromPosition(playerWorldPos);
-
-        float chunkXMinIndex = playerChunkIndex.x - ((AIChunkCount / 2) * chunkSize);
-        float chunkXMaxIndex = playerChunkIndex.x + ((AIChunkCount / 2) * chunkSize);
-
-        float chunkZMinIndex = playerChunkIndex.z - ((AIChunkCount / 2) * chunkSize);
-        float chunkZMaxIndex = playerChunkIndex.z + ((AIChunkCount / 2) * chunkSize);
-
-
-        for(float xIndex = chunkXMinIndex; xIndex <= chunkXMaxIndex; xIndex += chunkSize)
+        
+        for(int xIndex = 0; xIndex < AIChunkCount; xIndex++)
         {
-            for(float zIndex = chunkZMinIndex; zIndex <= chunkZMaxIndex; zIndex += chunkSize)
+            for(int zIndex = 0; zIndex < AIChunkCount; zIndex ++)
             {
-                Vector3 currentChunkPos = new Vector3(xIndex, 0, zIndex) / chunkSize;
+                int chunkIndexX = (int)playerChunkIndex.x - (int)((AIChunkCount-1)/2) + xIndex;
+                int chunkIndexZ = (int)playerChunkIndex.z - (int)((AIChunkCount-1)/2) + zIndex;
+                
+                Vector3 currentChunkPos = new Vector3(chunkIndexX, 0, chunkIndexZ);
                 Chunk currentChunk;
                 bool success = loadedChunks.TryGetValue(currentChunkPos, out currentChunk);
-                
-            
+
                 for(int pointIndexX = 0; pointIndexX < pointsPerChunk - 1; pointIndexX++)
                 {
                     for(int pointIndexZ = 0; pointIndexZ < pointsPerChunk - 1; pointIndexZ++)
                     {
                         int truePointIndex = (pointIndexX * pointsPerChunk) + pointIndexZ;
-                        positionNodesWithSpawns.Add(currentChunk.vertexPositions[truePointIndex], currentChunk.spawnablePoints[truePointIndex]);
-
+                        positionNodes[
+                            (xIndex * pointsPerChunk) + pointIndexX,
+                            (zIndex * pointsPerChunk) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
+                        positionNodes[
+                            (xIndex * pointsPerChunk) + pointIndexX,
+                            (zIndex * pointsPerChunk) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
                     }
                 }
-        
+            }
+        }
+        for(int xIndex = 0; xIndex < pointsPerChunk * AIChunkCount; xIndex++)
+        {
+            for(int zIndex = 0; zIndex < pointsPerChunk * AIChunkCount; zIndex ++)
+            {
+                if(positionNodes[xIndex, zIndex].spawnable)
+                {
+                    GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    go.transform.position = positionNodes[xIndex, zIndex].position;
+                }
             }
         }
 
-        foreach( var pair in positionNodesWithSpawns)
-        {
-            if(pair.Value)
-            {
-                GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.transform.position = pair.Key;
-            }
-        }
     }
 
     Vector3 GetChunkIndexFromPosition(Vector3 position)
     {
-        return new Vector3(0,0,0);
-        // if x = 243, z = -234, chunkSize = 100
-        // out => (200, 0, -200)
-        
-        //int x = (int)(position.x / chunkSize);
-        //int z = (int)(position.z / chunkSize);
-
-        //return new Vector3(x, 0, z) * chunkSize;
+        int x = Mathf.FloorToInt(position.x / chunkSize);
+        int z = Mathf.FloorToInt(position.z / chunkSize);
+        return new Vector3(x,0,z);        
     }
+
+    public int[] GetIndexFromPosition(Vector3 position)
+    {
+
+        float xGridPos = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));
+        float zGridPos =  Mathf.RoundToInt(position.z / (chunkSize / pointsPerChunk));
+        int[] indices = new int[2];
+
+        for(int xIndex=0; xIndex<pointsPerChunk * AIChunkCount; xIndex++ )
+        {
+            if(xGridPos == positionNodes[xIndex, 0].position.x )
+                indices[0] = xIndex;
+        }
+
+        for(int zIndex=0; zIndex<pointsPerChunk * AIChunkCount; zIndex++ )
+        {
+            if(zGridPos == positionNodes[0, zIndex].position.z )
+                indices[0] = zIndex;
+        }
+
+        return indices;
+        /*
+        int[] indexs = new int[2];
+        indexs[0] = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));
+        indexs[1] = Mathf.RoundToInt(position.z / (chunkSize / pointsPerChunk));
+        Debug.Log("Position: " + position + ", x: " + indexs[0] + ", z: " + indexs[1]);
+        return indexs;
+        */
+    }
+
 }
