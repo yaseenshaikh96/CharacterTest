@@ -118,6 +118,7 @@ public class Enemy_AI : MonoBehaviour
     {
         gravity.Increment(1);
         gravity.Update();
+        return;
         enemyController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
     }
     void ResetGravity()
@@ -153,6 +154,7 @@ public class Enemy_AI : MonoBehaviour
         GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.transform.position = enemySpawner.positionNodes[indices[0], indices[1]].position;
         go.transform.localScale = new Vector3(2, 2, 2);
+        go.GetComponent<Collider>().enabled = false;
 
         return;
 

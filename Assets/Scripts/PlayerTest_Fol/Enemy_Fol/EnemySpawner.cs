@@ -34,7 +34,6 @@ public class EnemySpawner : MonoBehaviour
 
     void Start()
     {
-
         chunkManager = GameObject.Find("TerrainManagerGO").GetComponent<ChunkManager>();
         pointsPerChunk = chunkManager.pointsPerChunk;
         chunkSize = chunkManager.chunkSize;
@@ -51,9 +50,7 @@ public class EnemySpawner : MonoBehaviour
                 positionNodes[xIndex, zIndex] = new PositionNode();
             }
         }
-
         Enemy_AI.enemySpawner = this;
-
 
         // spawn enemies
         //Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
@@ -113,6 +110,8 @@ public class EnemySpawner : MonoBehaviour
                 {
                     GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
                     go.transform.position = positionNodes[xIndex, zIndex].position;
+                    go.GetComponent<Collider>().enabled = false;
+
                 }
             }
         }
@@ -129,22 +128,20 @@ public class EnemySpawner : MonoBehaviour
     public int[] GetIndexFromPosition(Vector3 position)
     {
 
-        float xGridPos = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));
-        float zGridPos =  Mathf.RoundToInt(position.z / (chunkSize / pointsPerChunk));
+        float xGridPos = (position.x / (chunkSize / pointsPerChunk));
+        float zGridPos =  (position.z / (chunkSize / pointsPerChunk));
         int[] indices = new int[2];
 
         for(int xIndex=0; xIndex<pointsPerChunk * AIChunkCount; xIndex++ )
         {
-            if(xGridPos == positionNodes[xIndex, 0].position.x )
+            if(Mathf.Abs(position.x - positionNodes[xIndex, 0].position.x) < ((chunkSize / pointsPerChunk) / 1.5f))
                 indices[0] = xIndex;
         }
-
         for(int zIndex=0; zIndex<pointsPerChunk * AIChunkCount; zIndex++ )
         {
-            if(zGridPos == positionNodes[0, zIndex].position.z )
-                indices[0] = zIndex;
+            if(Mathf.Abs(position.z - positionNodes[0, zIndex].position.z) < ((chunkSize / pointsPerChunk) / 1.5f))
+                indices[1] = zIndex;
         }
-
         return indices;
         /*
         int[] indexs = new int[2];
