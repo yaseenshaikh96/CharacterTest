@@ -18,34 +18,38 @@ public class EnemySpawner : MonoBehaviour
     
     [SerializeField] public int AIChunkCount; // 3 => 3X3 centered on player
     [SerializeField] public float unloadDistance;
-    [SerializeField] public int AIGridSize = 20;
+    [SerializeField] public int AIGridSize = 21;
     [SerializeField] public int chasingDistance;
     [SerializeField] public float attackDistance;
+
+    public static int sAIGridSize = 21;
+
 
     public Vector2 playerWorldPos2D {get; private set;}
     public Vector3 playerWorldPos {get; private set;}
 
 
+
     Dictionary<Vector3, Chunk> loadedChunks;
     public PositionNode[,] positionNodes;
     ChunkManager chunkManager;
-    int pointsPerChunk;
-    float chunkSize;
+    public static int sPointsPerChunk;
+    public static float sChunkSize;
 
     void Start()
     {
         chunkManager = GameObject.Find("TerrainManagerGO").GetComponent<ChunkManager>();
-        pointsPerChunk = chunkManager.pointsPerChunk;
-        chunkSize = chunkManager.chunkSize;
+        sPointsPerChunk = chunkManager.pointsPerChunk;
+        sChunkSize = chunkManager.chunkSize;
 
         loadedChunks = GameObject.Find("TerrainManagerGO").GetComponent<TerrainDynamicLoad>().loadedChunks;
 
         playerWorldPos = new Vector3();
         playerWorldPos2D = new Vector2();
-        positionNodes = new PositionNode[pointsPerChunk * AIChunkCount, pointsPerChunk * AIChunkCount];
-        for(int xIndex = 0; xIndex < pointsPerChunk * AIChunkCount; xIndex++)
+        positionNodes = new PositionNode[sPointsPerChunk * AIChunkCount, sPointsPerChunk * AIChunkCount];
+        for(int xIndex = 0; xIndex < sPointsPerChunk * AIChunkCount; xIndex++)
         {
-            for(int zIndex = 0; zIndex < pointsPerChunk * AIChunkCount; zIndex ++)
+            for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
             {
                 positionNodes[xIndex, zIndex] = new PositionNode();
             }
@@ -66,7 +70,7 @@ public class EnemySpawner : MonoBehaviour
         {
             update = false;
             UpdatePositionNodes();
-            GetIndexFromPosition(testPosition);
+            GetParentIndexFromPosition(testPosition);
         }
     }
 
@@ -87,24 +91,24 @@ public class EnemySpawner : MonoBehaviour
                 Chunk currentChunk;
                 bool success = loadedChunks.TryGetValue(currentChunkPos, out currentChunk);
 
-                for(int pointIndexX = 0; pointIndexX < pointsPerChunk - 1; pointIndexX++)
+                for(int pointIndexX = 0; pointIndexX < sPointsPerChunk - 1; pointIndexX++)
                 {
-                    for(int pointIndexZ = 0; pointIndexZ < pointsPerChunk - 1; pointIndexZ++)
+                    for(int pointIndexZ = 0; pointIndexZ < sPointsPerChunk - 1; pointIndexZ++)
                     {
-                        int truePointIndex = (pointIndexX * pointsPerChunk) + pointIndexZ;
+                        int truePointIndex = (pointIndexX * sPointsPerChunk) + pointIndexZ;
                         positionNodes[
-                            (xIndex * pointsPerChunk) + pointIndexX,
-                            (zIndex * pointsPerChunk) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
+                            (xIndex * sPointsPerChunk) + pointIndexX,
+                            (zIndex * sPointsPerChunk) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
                         positionNodes[
-                            (xIndex * pointsPerChunk) + pointIndexX,
-                            (zIndex * pointsPerChunk) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
+                            (xIndex * sPointsPerChunk) + pointIndexX,
+                            (zIndex * sPointsPerChunk) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
                     }
                 }
             }
         }
-        for(int xIndex = 0; xIndex < pointsPerChunk * AIChunkCount; xIndex++)
+        for(int xIndex = 0; xIndex < sPointsPerChunk * AIChunkCount; xIndex++)
         {
-            for(int zIndex = 0; zIndex < pointsPerChunk * AIChunkCount; zIndex ++)
+            for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
             {
                 if(positionNodes[xIndex, zIndex].spawnable)
                 {
@@ -120,27 +124,33 @@ public class EnemySpawner : MonoBehaviour
 
     Vector3 GetChunkIndexFromPosition(Vector3 position)
     {
-        int x = Mathf.FloorToInt(position.x / chunkSize);
-        int z = Mathf.FloorToInt(position.z / chunkSize);
+        int x = Mathf.FloorToInt(position.x / sChunkSize);
+        int z = Mathf.FloorToInt(position.z / sChunkSize);
         return new Vector3(x,0,z);        
     }
 
-    public int[] GetIndexFromPosition(Vector3 position)
+    public int[] GetParentIndexFromPosition(Vector3 position)
     {
-
-        float xGridPos = (position.x / (chunkSize / pointsPerChunk));
-        float zGridPos =  (position.z / (chunkSize / pointsPerChunk));
+        
         int[] indices = new int[2];
+        indices[0] = -1;
+        indices[1] = -1;
 
-        for(int xIndex=0; xIndex<pointsPerChunk * AIChunkCount; xIndex++ )
+        for(int xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
         {
-            if(Mathf.Abs(position.x - positionNodes[xIndex, 0].position.x) < ((chunkSize / pointsPerChunk) / 1.5f))
+            if(Mathf.Abs(position.x - positionNodes[xIndex, 0].position.x) < ((sChunkSize / sPointsPerChunk) * 0.8f))
+            {
                 indices[0] = xIndex;
+                break;
+            }    
         }
-        for(int zIndex=0; zIndex<pointsPerChunk * AIChunkCount; zIndex++ )
+        for(int zIndex=0; zIndex<sPointsPerChunk * AIChunkCount; zIndex++ )
         {
-            if(Mathf.Abs(position.z - positionNodes[0, zIndex].position.z) < ((chunkSize / pointsPerChunk) / 1.5f))
+            if(Mathf.Abs(position.z - positionNodes[0, zIndex].position.z) < ((sChunkSize / sPointsPerChunk) * 0.8f))
+            {
                 indices[1] = zIndex;
+                break;
+            }
         }
         return indices;
         /*

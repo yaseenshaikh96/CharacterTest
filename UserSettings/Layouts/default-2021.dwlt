@@ -119,7 +119,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 97
+  controlID: 51
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -503,9 +503,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 121.92431, y: 51.51587, z: 179.42221}
+    m_Target: {x: -75.7525, y: -24.137497, z: -66.32142}
     speed: 2
-    m_Value: {x: 121.92431, y: 51.51587, z: 179.42221}
+    m_Value: {x: -75.7525, y: -24.137497, z: -66.32142}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -552,13 +552,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.08757895, y: -0.81040347, z: 0.56668735, w: -0.12220955}
+    m_Target: {x: 0.7076973, y: 0.005452304, z: -0.0030410048, w: 0.70683986}
     speed: 2
-    m_Value: {x: -0.08737416, y: -0.81105244, z: 0.5653316, w: -0.122310475}
+    m_Value: {x: 0.7075215, y: 0.00545095, z: -0.0030402495, w: 0.7066643}
   m_Size:
-    m_Target: 221.92755
+    m_Target: 155.68094
     speed: 2
-    m_Value: 232.38487
+    m_Value: 155.68094
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -614,9 +614,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 60650000
-      m_LastClickedID: 25952
-      m_ExpandedIDs: e2faffff1c610000
+      m_SelectedIDs: d8faffff
+      m_LastClickedID: -1320
+      m_ExpandedIDs: 026cf7ff086df7ffa873f7ffce73f7ffd8faffffe2faffff5a5d0000125e0000c26000001c6100002663000054630000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -691,8 +691,8 @@ MonoBehaviour:
     vZoomLockedByDefault: 0
     m_HBaseRangeMin: -481.5
     m_HBaseRangeMax: 481.5
-    m_VBaseRangeMin: -267
-    m_VBaseRangeMax: 267
+    m_VBaseRangeMin: -256.5
+    m_VBaseRangeMax: 256.5
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -709,11 +709,11 @@ MonoBehaviour:
     m_DrawArea:
       serializedVersion: 2
       x: 0
-      y: 0
+      y: 21
       width: 963
-      height: 534
+      height: 513
     m_Scale: {x: 1, y: 1}
-    m_Translation: {x: 481.5, y: 267}
+    m_Translation: {x: 481.5, y: 256.5}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
@@ -721,9 +721,9 @@ MonoBehaviour:
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
       x: -481.5
-      y: -267
+      y: -256.5
       width: 963
-      height: 534
+      height: 513
     m_MinimalGUI: 1
   m_defaultScale: 1
   m_LastWindowPixelSize: {x: 963, y: 534}
