@@ -17,9 +17,6 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] public LayerMask groundLayer;
     
     [SerializeField] public int AIChunkCount; // 3 => 3X3 centered on player
-    [SerializeField] public float unloadDistance;
-    [SerializeField] public int AIGridSize = 21;
-    [SerializeField] public int chasingDistance;
     [SerializeField] public float attackDistance;
 
     public static int sAIGridSize = 21;

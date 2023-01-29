@@ -63,11 +63,11 @@ public class Enemy_AI : MonoBehaviour
         if(enemySpawner == null)
             return;
 
+        UpdateVariables();
         if (IsOutOfRange())
         {
            return;
        }
-        UpdateVariables();
         enemyState.Update();
     }
     void UpdateVariables()
@@ -81,7 +81,57 @@ public class Enemy_AI : MonoBehaviour
 
     bool IsOutOfRange()
     {
-        return Vector2.Distance(enemySpawner.playerWorldPos2D, enemyWorldPos2D) > enemySpawner.unloadDistance;
+        float DistBetwnPoints = (EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk);
+        float distToEdge = (DistBetwnPoints * ((EnemySpawner.sAIGridSize - 1) / 2));
+        if(
+            enemySpawner.playerWorldPos.x > enemyWorldPosNew.x + distToEdge ||
+            enemySpawner.playerWorldPos.x < enemyWorldPosNew.x - distToEdge ||
+
+            enemySpawner.playerWorldPos.y > enemyWorldPosNew.y + distToEdge ||
+            enemySpawner.playerWorldPos.y < enemyWorldPosNew.y - distToEdge
+        )
+        {
+            Debug.Log("OutOfRange");
+            return true;
+        }
+        else
+        {
+            Debug.Log("Not OutOfRange");
+            return false;          
+        }
+
+        /*
+        Vector3 enemyGridPos = cellNodes[ownGridIndices[0], ownGridIndices[1]].position;
+        Vector3 playerGridPos = cellNodes[playerOwnGridIndices[0], playerOwnGridIndices[1]].position;
+        float DistBetwnPoints = (EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk);
+        float xUpperBound = enemyGridPos.x + (((EnemySpawner.sAIGridSize-1) / 2) * DistBetwnPoints);
+        float xLowerBound = enemyGridPos.x - (((EnemySpawner.sAIGridSize-1) / 2) * DistBetwnPoints);
+        float yUpperBound = enemyGridPos.y + (((EnemySpawner.sAIGridSize-1) / 2) * DistBetwnPoints);
+        float yLowerBound = enemyGridPos.y - (((EnemySpawner.sAIGridSize-1) / 2) * DistBetwnPoints);
+        */
+        /*
+        Vector3 upperBound = cellNodes[0, EnemySpawner.sAIGridSize-1].position;
+        Vector3 lowerBound = cellNodes[EnemySpawner.sAIGridSize-1, 0].position;
+
+        if(
+            enemySpawner.playerWorldPos.x > upperBound.x ||
+            enemySpawner.playerWorldPos.x < lowerBound.x ||
+            enemySpawner.playerWorldPos.z > upperBound.z ||
+            enemySpawner.playerWorldPos.z < lowerBound.z
+        )
+        {
+            Debug.Log("OutOfRange");
+            return true;
+        }
+        else
+        {
+            Debug.Log("Not OutOfRange");
+            return false;
+        }
+        */
+
+        // float outOfRangeDistance = 0;
+        // return Vector2.Distance(enemySpawner.playerWorldPos2D, enemyWorldPos2D) > outOfRangeDistance;
     }
     void AIMove(float magnitude)
     {
@@ -146,7 +196,8 @@ public class Enemy_AI : MonoBehaviour
     }
     bool IsInChasingDistance()
     {
-        return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.chasingDistance;
+        return true;
+        //return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.chasingDistance;
     }
 
     //-------------------------------------------------------------------------//
@@ -195,6 +246,9 @@ public class Enemy_AI : MonoBehaviour
             }
         }
 
+        Debug.Log("Enemy: " + cellNodes[ownGridIndices[0], ownGridIndices[1]].position);
+
+
         GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
         go2.transform.position = cellNodes[ownGridIndices[0], ownGridIndices[1]].position;
         go2.transform.localScale = new Vector3(3, 3, 3);
@@ -227,7 +281,7 @@ public class Enemy_AI : MonoBehaviour
 
         for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++ )
         {
-            if(Mathf.Abs(position.x - cellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            if(Mathf.Abs(position.x - cellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 1.0f))
             {    
                 indices[0] = xIndex;
                 break;
@@ -235,7 +289,7 @@ public class Enemy_AI : MonoBehaviour
         }
         for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++ )
         {
-            if(Mathf.Abs(position.z - cellNodes[0, zIndex].position.z) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            if(Mathf.Abs(position.z - cellNodes[0, zIndex].position.z) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 1.0f))
             {
                 indices[1] = zIndex;
                 break;
