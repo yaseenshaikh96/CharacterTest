@@ -128,7 +128,7 @@ public class Enemy_AI : MonoBehaviour
             Debug.Log("Not OutOfRange");
             return false;
         }
-        */
+        */ 
 
         // float outOfRangeDistance = 0;
         // return Vector2.Distance(enemySpawner.playerWorldPos2D, enemyWorldPos2D) > outOfRangeDistance;
