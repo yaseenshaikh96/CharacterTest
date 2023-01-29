@@ -19,7 +19,7 @@ public class Enemy_AI : MonoBehaviour
     EnemyState enemyState;
 
     //------------------------------------------------------------------//
-    int[] ownGridIndices, parentGridIndices, playerOwnGridIndices;
+    int[] ownGridIndices, parentGridIndicesNew, parentGridIndicesOld, playerOwnGridIndicesNew, playerOwnGridIndicesOld;
  
     Vector3 enemyWorldPosNew, enemyWorldPosOld;
     Vector2 enemyWorldPos2D;
@@ -38,8 +38,10 @@ public class Enemy_AI : MonoBehaviour
         enemyState.Set(this, enemyController);
 
         ownGridIndices = new int[2];
-        parentGridIndices = new int[2];
-        playerOwnGridIndices = new int[2];
+        parentGridIndicesNew = new int[2];
+        parentGridIndicesOld = new int[2];
+        playerOwnGridIndicesNew = new int[2];
+        playerOwnGridIndicesOld = new int[2];
 
         cellNodes = new CellNode[EnemySpawner.sAIGridSize, EnemySpawner.sAIGridSize];
         for(int xIndex=0; xIndex< EnemySpawner.sAIGridSize; xIndex++)
@@ -67,11 +69,17 @@ public class Enemy_AI : MonoBehaviour
         if (IsOutOfRange())
         {
            return;
-       }
+        }
         enemyState.Update();
     }
     void UpdateVariables()
     {
+        parentGridIndicesOld[0] = parentGridIndicesNew[0];
+        parentGridIndicesOld[1] = parentGridIndicesNew[1];
+
+        playerOwnGridIndicesOld[0] = playerOwnGridIndicesNew[0];
+        playerOwnGridIndicesOld[1] = playerOwnGridIndicesNew[1];
+        
         enemyWorldPosOld = enemyWorldPosNew;   
         enemyWorldPosNew = EnemyGO.transform.position;
         enemyWorldPos2D.x = enemyWorldPosNew.x;
@@ -213,27 +221,29 @@ public class Enemy_AI : MonoBehaviour
         // go.transform.localScale = new Vector3(2, 2, 2);
         // go.GetComponent<Collider>().enabled = false;
 
-        parentGridIndices = enemySpawner.GetParentIndexFromPosition(enemyWorldPosNew);
+        parentGridIndicesNew = enemySpawner.GetParentIndexFromPosition(enemyWorldPosNew);
 
         ownGridIndices[0] = (EnemySpawner.sAIGridSize - 1) /2;
         ownGridIndices[1] = (EnemySpawner.sAIGridSize - 1) /2;
 
 
-        if(parentGridIndices[0] == -1 
-            || parentGridIndices[1] == -1 )
+        if(parentGridIndicesNew[0] == -1 
+            || parentGridIndicesNew[1] == -1 )
         {
-            Debug.Log("ERROR!!!!!!!" + " : " + parentGridIndices[0] + ", " + parentGridIndices[1]);
+            Debug.Log("ERROR!!!!!!!" + " : " + parentGridIndicesNew[0] + ", " + parentGridIndicesNew[1]);
         }
 
         for(int xIndex=0; xIndex< EnemySpawner.sAIGridSize; xIndex++)
         {
             for(int zIndex=0; zIndex< EnemySpawner.sAIGridSize; zIndex++)
             {
-                int ParentIndexX = parentGridIndices[0] - ((EnemySpawner.sAIGridSize - 1) / 2) + xIndex;
-                int ParentIndexZ = parentGridIndices[1] - ((EnemySpawner.sAIGridSize - 1) / 2) + zIndex;
+                int ParentIndexX = parentGridIndicesNew[0] - ((EnemySpawner.sAIGridSize - 1) / 2) + xIndex;
+                int ParentIndexZ = parentGridIndicesNew[1] - ((EnemySpawner.sAIGridSize - 1) / 2) + zIndex;
 
                 cellNodes[xIndex, zIndex].position = enemySpawner.positionNodes[ParentIndexX, ParentIndexZ].position;
                 cellNodes[xIndex, zIndex].spawnable= enemySpawner.positionNodes[ParentIndexX, ParentIndexZ].spawnable;
+
+                cellNodes[xIndex, zIndex].hScore = Vector2.Distance(cellNodes[xIndex, zIndex].position, enemySpawner.playerWorldPos2D);
 
                 if(cellNodes[xIndex, zIndex].spawnable)
                 {
@@ -249,6 +259,7 @@ public class Enemy_AI : MonoBehaviour
         Debug.Log("Enemy: " + cellNodes[ownGridIndices[0], ownGridIndices[1]].position);
 
 
+
         GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
         go2.transform.position = cellNodes[ownGridIndices[0], ownGridIndices[1]].position;
         go2.transform.localScale = new Vector3(3, 3, 3);
@@ -256,18 +267,33 @@ public class Enemy_AI : MonoBehaviour
         go2.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 1.0f, 0.2f, 1.0f));
 
         
-        playerOwnGridIndices = GetChildIndexFromPosition(enemySpawner.playerWorldPos);
-        if(playerOwnGridIndices[0] == -1 
-            || playerOwnGridIndices[1] == -1)
+        playerOwnGridIndicesNew = GetChildIndexFromPosition(enemySpawner.playerWorldPos);
+        if(playerOwnGridIndicesNew[0] == -1 
+            || playerOwnGridIndicesNew[1] == -1)
         {
             Debug.Log("Error: Player not in enemy own grid");
             return;            
         }
         GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go3.transform.position = cellNodes[playerOwnGridIndices[0], playerOwnGridIndices[1]].position;
+        go3.transform.position = cellNodes[playerOwnGridIndicesNew[0], playerOwnGridIndicesNew[1]].position;
         go3.transform.localScale = new Vector3(3, 3, 3);
         go3.GetComponent<Collider>().enabled = false;
         go3.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 1.0f, 1.0f));
+    }
+
+    void UpdateAStarValues()
+    {
+        if(
+            playerOwnGridIndicesNew[0] == playerOwnGridIndicesNew[0] &&
+            playerOwnGridIndicesNew[1] == playerOwnGridIndicesNew[1] &&
+            ownGridIndices[0] == ownGridIndices[0] &&
+            ownGridIndices[1] == ownGridIndices[1]
+        )
+        {
+            return;
+        }
+
+        // update variables
     }
 
     public int[] GetChildIndexFromPosition(Vector3 position)
