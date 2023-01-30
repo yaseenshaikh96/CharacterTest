@@ -597,7 +597,7 @@ public class Chunk
         stdDevi /= N;
         stdDevi = Mathf.Sqrt(stdDevi);
         ChunkLayer.Init(mean, stdDevi);
-        Debug.Log("mean: " + mean + ", stdDevi: " + stdDevi);
+        //Debug.Log("mean: " + mean + ", stdDevi: " + stdDevi);
 
         //float pointHeightMean = 0.7325492f;
         //float pointHeightStdDevi = 0.04852225f;

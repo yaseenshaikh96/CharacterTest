@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PositionNode
+public class ParentCellNode
 {
+    public int xIndex, zIndex;
     public Vector3 position = Vector3.zero;
     public bool spawnable = false;
 }
@@ -29,7 +30,7 @@ public class EnemySpawner : MonoBehaviour
 
 
     Dictionary<Vector3, Chunk> loadedChunks;
-    public PositionNode[,] positionNodes;
+    public ParentCellNode[,] parentCellNodes;
     ChunkManager chunkManager;
     public static int sPointsPerChunk;
     public static float sChunkSize;
@@ -46,12 +47,14 @@ public class EnemySpawner : MonoBehaviour
 
         playerWorldPos = new Vector3();
         playerWorldPos2D = new Vector2();
-        positionNodes = new PositionNode[sPointsPerChunk * AIChunkCount, sPointsPerChunk * AIChunkCount];
+        parentCellNodes = new ParentCellNode[sPointsPerChunk * AIChunkCount, sPointsPerChunk * AIChunkCount];
         for(int xIndex = 0; xIndex < sPointsPerChunk * AIChunkCount; xIndex++)
         {
             for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
             {
-                positionNodes[xIndex, zIndex] = new PositionNode();
+                parentCellNodes[xIndex, zIndex] = new ParentCellNode();
+                parentCellNodes[xIndex, zIndex].xIndex = xIndex;
+                parentCellNodes[xIndex, zIndex].zIndex = zIndex;
             }
         }
         Enemy_AI.enemySpawner = this;
@@ -60,8 +63,23 @@ public class EnemySpawner : MonoBehaviour
         //Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
     }
 
+/*
+        timeSinceLastLoaded += Time.deltaTime;
+        if (timeSinceLastLoaded > timeBtnLoad)
+        {
+            timeSinceLastLoaded = 0;
+*/
+    float timeSinceLoad = 0;
+    bool hasBeenUpdated = false;
+    const float timeBetweenLoad = 4f; 
     void Update()
     {
+        timeSinceLoad += Time.deltaTime;
+        if (!hasBeenUpdated && timeSinceLoad > timeBetweenLoad)
+        {
+            hasBeenUpdated = true;
+            UpdatePositionNodes();
+        }
         // update player pos
         playerWorldPos = playerGO.transform.position;
         playerWorldPos2D = new Vector2(playerGO.transform.position.x, playerGO.transform.position.z);
@@ -70,7 +88,6 @@ public class EnemySpawner : MonoBehaviour
         {
             update = false;
             UpdatePositionNodes();
-            GetParentIndexFromPosition(testPosition);
         }
     }
 
@@ -100,10 +117,10 @@ public class EnemySpawner : MonoBehaviour
                     for(int pointIndexZ = 0; pointIndexZ < sPointsPerChunk - 1; pointIndexZ++)
                     {
                         int truePointIndex = (pointIndexX * sPointsPerChunk) + pointIndexZ;
-                        positionNodes[
+                        parentCellNodes[
                             (xIndex * sPointsPerChunk) + pointIndexX,
                             (zIndex * sPointsPerChunk) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
-                        positionNodes[
+                        parentCellNodes[
                             (xIndex * sPointsPerChunk) + pointIndexX,
                             (zIndex * sPointsPerChunk) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
                     }
@@ -114,11 +131,11 @@ public class EnemySpawner : MonoBehaviour
         {
             for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
             {
-                if(positionNodes[xIndex, zIndex].spawnable)
+                if(parentCellNodes[xIndex, zIndex].spawnable)
                 {
                     GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
                     go.transform.parent = DebugParentGO.transform;
-                    go.transform.position = positionNodes[xIndex, zIndex].position;
+                    go.transform.position = parentCellNodes[xIndex, zIndex].position;
                     go.GetComponent<Collider>().enabled = false;
 
                 }
@@ -134,28 +151,25 @@ public class EnemySpawner : MonoBehaviour
         return new Vector3(x,0,z);        
     }
 
-    public Vector2Int GetParentIndexFromPosition(Vector3 position)
+    public ParentCellNode GetParentIndexFromPosition(Vector3 position)
     {
         
-        Vector2Int indices = new Vector2Int(-1, -1);
-
-        for(int xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
+        int xIndex, zIndex;
+        for(xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
         {
-            if(Mathf.Abs(position.x - positionNodes[xIndex, 0].position.x) < ((sChunkSize / sPointsPerChunk) * 0.8f))
+            if(Mathf.Abs(position.x - parentCellNodes[xIndex, 0].position.x) < ((sChunkSize / sPointsPerChunk) * 0.8f))
             {
-                indices[0] = xIndex;
                 break;
             }    
         }
-        for(int zIndex=0; zIndex<sPointsPerChunk * AIChunkCount; zIndex++ )
+        for(zIndex=0; zIndex<sPointsPerChunk * AIChunkCount; zIndex++ )
         {
-            if(Mathf.Abs(position.z - positionNodes[0, zIndex].position.z) < ((sChunkSize / sPointsPerChunk) * 0.8f))
+            if(Mathf.Abs(position.z - parentCellNodes[0, zIndex].position.z) < ((sChunkSize / sPointsPerChunk) * 0.8f))
             {
-                indices[1] = zIndex;
                 break;
             }
         }
-        return indices;
+        return parentCellNodes[xIndex, zIndex];
         /*
         int[] indexs = new int[2];
         indexs[0] = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));
