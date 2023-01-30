@@ -10,6 +10,7 @@ public class PositionNode
 
 public class EnemySpawner : MonoBehaviour
 {
+    GameObject DebugParentGO;
     [SerializeField] Vector3 testPosition;
     [SerializeField] bool update = false;
     [SerializeField] GameObject EnemyPrefab;
@@ -35,6 +36,8 @@ public class EnemySpawner : MonoBehaviour
 
     void Start()
     {
+        DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
         chunkManager = GameObject.Find("TerrainManagerGO").GetComponent<ChunkManager>();
         sPointsPerChunk = chunkManager.pointsPerChunk;
         sChunkSize = chunkManager.chunkSize;
@@ -73,6 +76,10 @@ public class EnemySpawner : MonoBehaviour
 
     void UpdatePositionNodes()
     {
+        Destroy(DebugParentGO);
+        DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        DebugParentGO.name = "EnemySpawnerGO_DebugParent"; 
+
         loadedChunks = GameObject.Find("TerrainManagerGO").GetComponent<TerrainDynamicLoad>().loadedChunks;
 
         Vector3 playerChunkIndex = GetChunkIndexFromPosition(playerWorldPos);
@@ -110,6 +117,7 @@ public class EnemySpawner : MonoBehaviour
                 if(positionNodes[xIndex, zIndex].spawnable)
                 {
                     GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    go.transform.parent = DebugParentGO.transform;
                     go.transform.position = positionNodes[xIndex, zIndex].position;
                     go.GetComponent<Collider>().enabled = false;
 
@@ -126,12 +134,10 @@ public class EnemySpawner : MonoBehaviour
         return new Vector3(x,0,z);        
     }
 
-    public int[] GetParentIndexFromPosition(Vector3 position)
+    public Vector2Int GetParentIndexFromPosition(Vector3 position)
     {
         
-        int[] indices = new int[2];
-        indices[0] = -1;
-        indices[1] = -1;
+        Vector2Int indices = new Vector2Int(-1, -1);
 
         for(int xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
         {
