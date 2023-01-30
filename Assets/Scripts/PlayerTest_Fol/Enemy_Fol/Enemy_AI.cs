@@ -197,14 +197,6 @@ public class Enemy_AI : MonoBehaviour
         DebugParentGO.name = "Enemy_AI_DebugParentGO";
         DebugParentGO.transform.position = Vector3.zero;
 
-        // int[] indices = enemySpawner.GetIndexFromPosition(enemyWorldPosNew);
-        
-        // Debug.Log("Position: " + enemySpawner.positionNodes[indices[0], indices[1]].position);
-
-        // GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-        // go.transform.position = enemySpawner.positionNodes[indices[0], indices[1]].position;
-        // go.transform.localScale = new Vector3(2, 2, 2);
-        // go.GetComponent<Collider>().enabled = false;
 
         parentGridIndicesNew = enemySpawner.GetParentIndexFromPosition(enemyWorldPosNew);
 
@@ -243,9 +235,6 @@ public class Enemy_AI : MonoBehaviour
         }
 
         Debug.Log("Enemy: " + cellNodes[ownGridIndices[0], ownGridIndices[1]].position);
-
-
-
         GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
         go2.transform.parent = DebugParentGO.transform;
         go2.transform.position = cellNodes[ownGridIndices[0], ownGridIndices[1]].position;
@@ -256,7 +245,6 @@ public class Enemy_AI : MonoBehaviour
         
         playerOwnGridIndicesNew = GetChildIndexFromPosition(enemySpawner.playerWorldPos);
         Debug.Log("Player: " + enemySpawner.playerWorldPos);
-
         GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
         go3.transform.parent = DebugParentGO.transform;
         go3.transform.position = cellNodes[playerOwnGridIndicesNew[0], playerOwnGridIndicesNew[1]].position;
@@ -310,31 +298,6 @@ public class Enemy_AI : MonoBehaviour
             }
         }
         return indices;
-        /*
-        for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++)
-        {
-            float currentXDist = Mathf.Abs(position.x - cellNodes[xIndex, 0].position.x);
-
-            Debug.Log("currentXDist: " + currentXDist + ", currentLowestDistX: " + currentLowestDistX + "\n"
-                    + "cellnodePos: " + cellNodes[xIndex, 0].position.x + ", xIndex: " + xIndex);
-            
-            if( currentXDist < currentLowestDistX)
-            {
-                currentLowestDistX = currentXDist;
-                indices[0] = xIndex;
-            }
-        }
-        for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++)
-        {
-            float currentZDist = Mathf.Abs(position.z - cellNodes[0, zIndex].position.z);
-            if( currentZDist < currentLowestDistZ)
-            {
-                currentLowestDistZ = currentZDist;
-                indices[1] = zIndex;
-            }
-        }
-        Debug.Log("Indices: " + indices[0] + ", " + indices[1]);
-        */
     }
 
     Vector2Int FindIndexOfLowestFCost()
