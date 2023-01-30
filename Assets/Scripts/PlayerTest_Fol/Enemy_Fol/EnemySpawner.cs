@@ -5,7 +5,7 @@ using UnityEngine;
 public class ParentCellNode
 {
     public int xIndex, zIndex;
-    public Vector3 position = Vector3.zero;
+    public Vector3 position = new Vector3(-1f, -1f, -1f);
     public bool spawnable = false;
 }
 
@@ -31,6 +31,7 @@ public class EnemySpawner : MonoBehaviour
 
     Dictionary<Vector3, Chunk> loadedChunks;
     public ParentCellNode[,] parentCellNodes;
+    int parentCellNodesSize;
     ChunkManager chunkManager;
     public static int sPointsPerChunk;
     public static float sChunkSize;
@@ -47,10 +48,11 @@ public class EnemySpawner : MonoBehaviour
 
         playerWorldPos = new Vector3();
         playerWorldPos2D = new Vector2();
-        parentCellNodes = new ParentCellNode[sPointsPerChunk * AIChunkCount, sPointsPerChunk * AIChunkCount];
-        for(int xIndex = 0; xIndex < sPointsPerChunk * AIChunkCount; xIndex++)
+        parentCellNodesSize = (sPointsPerChunk-1) * AIChunkCount;
+        parentCellNodes = new ParentCellNode[parentCellNodesSize, parentCellNodesSize];
+        for(int xIndex = 0; xIndex < parentCellNodesSize; xIndex++)
         {
-            for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
+            for(int zIndex = 0; zIndex < parentCellNodesSize; zIndex++)
             {
                 parentCellNodes[xIndex, zIndex] = new ParentCellNode();
                 parentCellNodes[xIndex, zIndex].xIndex = xIndex;
@@ -116,24 +118,26 @@ public class EnemySpawner : MonoBehaviour
                 {
                     for(int pointIndexZ = 0; pointIndexZ < sPointsPerChunk - 1; pointIndexZ++)
                     {
-                        int truePointIndex = (pointIndexX * sPointsPerChunk) + pointIndexZ;
+
+                        int truePointIndex = (pointIndexX * (sPointsPerChunk)) + pointIndexZ;
                         parentCellNodes[
-                            (xIndex * sPointsPerChunk) + pointIndexX,
-                            (zIndex * sPointsPerChunk) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
+                            (xIndex * (sPointsPerChunk-1)) + pointIndexX,
+                            (zIndex * (sPointsPerChunk-1)) + pointIndexZ].position = currentChunk.vertexPositions[truePointIndex];
                         parentCellNodes[
-                            (xIndex * sPointsPerChunk) + pointIndexX,
-                            (zIndex * sPointsPerChunk) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
+                            (xIndex * (sPointsPerChunk-1)) + pointIndexX,
+                            (zIndex * (sPointsPerChunk-1)) + pointIndexZ].spawnable = currentChunk.spawnablePoints[truePointIndex];
                     }
                 }
             }
         }
-        for(int xIndex = 0; xIndex < sPointsPerChunk * AIChunkCount; xIndex++)
+        for(int xIndex = 0; xIndex < parentCellNodesSize; xIndex++)
         {
-            for(int zIndex = 0; zIndex < sPointsPerChunk * AIChunkCount; zIndex ++)
+            for(int zIndex = 0; zIndex < parentCellNodesSize; zIndex ++)
             {
                 if(parentCellNodes[xIndex, zIndex].spawnable)
                 {
                     GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    go.name = $"index: ({xIndex}, {zIndex})";
                     go.transform.parent = DebugParentGO.transform;
                     go.transform.position = parentCellNodes[xIndex, zIndex].position;
                     go.GetComponent<Collider>().enabled = false;
@@ -153,6 +157,25 @@ public class EnemySpawner : MonoBehaviour
 
     public ParentCellNode GetParentIndexFromPosition(Vector3 position)
     {
+                int xIndexOut = -1, zIndexOut = -1;
+        for(int xIndex=0; xIndex<parentCellNodesSize; xIndex++)
+        {
+            if(Mathf.Abs(position.x - parentCellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            {
+                xIndexOut = xIndex;
+                break;
+            }    
+        }
+        for(int zIndex=0; zIndex<parentCellNodesSize; zIndex++)
+        {
+            if(Mathf.Abs(position.z - parentCellNodes[0, zIndex].position.z) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            {
+                zIndexOut = zIndex;
+                break;
+            }
+        }
+        return parentCellNodes[xIndexOut, zIndexOut];
+        /*
         ParentCellNode bottomLeft = parentCellNodes[0, 0];
         float xDiff = Mathf.Abs(position.x - bottomLeft.position.x);
         float zDiff = Mathf.Abs(position.z - bottomLeft.position.z);
@@ -160,30 +183,6 @@ public class EnemySpawner : MonoBehaviour
         int zIndex = Mathf.RoundToInt(zDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
 
         return parentCellNodes[xIndex, zIndex];
-        /*
-        int xIndex, zIndex;
-        for(xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
-        {
-            if(Mathf.Abs(position.x - parentCellNodes[xIndex, 0].position.x) < ((sChunkSize / sPointsPerChunk) * 0.8f))
-            {
-                break;
-            }    
-        }
-        for(zIndex=0; zIndex<sPointsPerChunk * AIChunkCount; zIndex++ )
-        {
-            if(Mathf.Abs(position.z - parentCellNodes[0, zIndex].position.z) < ((sChunkSize / sPointsPerChunk) * 0.8f))
-            {
-                break;
-            }
-        }
-        return parentCellNodes[xIndex, zIndex];
-        */
-        /*
-        int[] indexs = new int[2];
-        indexs[0] = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));
-        indexs[1] = Mathf.RoundToInt(position.z / (chunkSize / pointsPerChunk));
-        Debug.Log("Position: " + position + ", x: " + indexs[0] + ", z: " + indexs[1]);
-        return indexs;
         */
     }
 

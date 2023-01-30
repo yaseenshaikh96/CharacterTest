@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class CellNode
 {
-    public int xIndex, zIndex;
-    public Vector3 position = Vector3.zero;
+    public int xIndex = -1, zIndex = -1;
+    public Vector3 position = new Vector3(-1f, -1f, -1f);
     public bool spawnable = false;
-    public float gScore;
-    public float hScore;
-    public float fScore;
+    public float gScore = Mathf.Infinity;
+    public float hScore = Mathf.Infinity;
+    public float fScore = Mathf.Infinity;
 }
 
 public class Enemy_AI : MonoBehaviour
@@ -49,10 +49,13 @@ public class Enemy_AI : MonoBehaviour
         closedListGridIndex = new List<Vector2Int>();
 
         cellNodes = new CellNode[EnemySpawner.sAIGridSize, EnemySpawner.sAIGridSize];
-        for(int xIndex=0; xIndex< EnemySpawner.sAIGridSize; xIndex++)
-            for(int zIndex=0; zIndex< EnemySpawner.sAIGridSize; zIndex++)
-            cellNodes[xIndex, zIndex] = new CellNode();
-
+        for (int xIndex = 0; xIndex < EnemySpawner.sAIGridSize; xIndex++)
+        {
+            for (int zIndex = 0; zIndex < EnemySpawner.sAIGridSize; zIndex++)
+            {
+                cellNodes[xIndex, zIndex] = new CellNode();
+            }
+        }
     }
 
     float timeSinceLastLoaded = 0;
@@ -73,13 +76,13 @@ public class Enemy_AI : MonoBehaviour
         }
 
 
-        if(enemySpawner == null)
+        if (enemySpawner == null)
             return;
 
         UpdateVariables();
         if (IsOutOfRange())
         {
-           return;
+            return;
         }
         enemyState.Update();
     }
@@ -87,9 +90,10 @@ public class Enemy_AI : MonoBehaviour
     {
         enemyParentCellNodeOld = enemyParentCellNodeNew;
         playerCellNodeOld = playerCellNodeNew;
-        
-        enemyWorldPosOld = enemyWorldPosNew;   
+
+        enemyWorldPosOld = enemyWorldPosNew;
         enemyWorldPosNew = EnemyGO.transform.position;
+
         enemyWorldPos2D.x = enemyWorldPosNew.x;
         enemyWorldPos2D.y = enemyWorldPosNew.z;
     }
@@ -99,7 +103,7 @@ public class Enemy_AI : MonoBehaviour
     {
         float DistBetwnPoints = (EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk);
         float distToEdge = (DistBetwnPoints * ((EnemySpawner.sAIGridSize - 1) / 2));
-        if(
+        if (
             enemySpawner.playerWorldPos.x > enemyWorldPosNew.x + distToEdge ||
             enemySpawner.playerWorldPos.x < enemyWorldPosNew.x - distToEdge ||
 
@@ -111,7 +115,7 @@ public class Enemy_AI : MonoBehaviour
         }
         else
         {
-            return false;          
+            return false;
         }
     }
 
@@ -120,7 +124,7 @@ public class Enemy_AI : MonoBehaviour
         Vector3 moveDirection = enemySpawner.playerWorldPos - enemyWorldPosNew;
         moveDirection.y = 0;
         moveDirection = moveDirection.normalized;
-        Move(moveDirection, magnitude); 
+        Move(moveDirection, magnitude);
     }
 
     void Move(Vector3 newDir, float magnitude)
@@ -132,7 +136,7 @@ public class Enemy_AI : MonoBehaviour
         RotateInDirOfMotion(newDir);
         enemyController.Move(newDir * magnitude * Time.deltaTime);
     }
-    
+
     float rotSpeed = 20;
     void RotateInDirOfMotion(Vector3 dirOfMotion)
     {
@@ -202,22 +206,23 @@ public class Enemy_AI : MonoBehaviour
         }
         */
 
-        for(int xIndex=0; xIndex< EnemySpawner.sAIGridSize; xIndex++)
+        for (int xIndex = 0; xIndex < EnemySpawner.sAIGridSize; xIndex++)
         {
-            for(int zIndex=0; zIndex< EnemySpawner.sAIGridSize; zIndex++)
+            for (int zIndex = 0; zIndex < EnemySpawner.sAIGridSize; zIndex++)
             {
-                int ParentIndexX = enemyParentCellNodeNew.xIndex - ((EnemySpawner.sAIGridSize - 1) / 2) + xIndex;
-                int ParentIndexZ = enemyParentCellNodeNew.zIndex - ((EnemySpawner.sAIGridSize - 1) / 2) + zIndex;
+                int ParentIndexX = enemyParentCellNodeNew.xIndex - (int)((EnemySpawner.sAIGridSize - 1) / 2) + xIndex;
+                int ParentIndexZ = enemyParentCellNodeNew.zIndex - (int)((EnemySpawner.sAIGridSize - 1) / 2) + zIndex;
 
                 cellNodes[xIndex, zIndex].position = enemySpawner.parentCellNodes[ParentIndexX, ParentIndexZ].position;
-                cellNodes[xIndex, zIndex].spawnable= enemySpawner.parentCellNodes[ParentIndexX, ParentIndexZ].spawnable;
+                cellNodes[xIndex, zIndex].spawnable = enemySpawner.parentCellNodes[ParentIndexX, ParentIndexZ].spawnable;
                 cellNodes[xIndex, zIndex].xIndex = xIndex;
                 cellNodes[xIndex, zIndex].zIndex = zIndex;
-                cellNodes[xIndex, zIndex].hScore = Vector2.Distance(cellNodes[xIndex, zIndex].position, enemySpawner.playerWorldPos2D);
+                cellNodes[xIndex, zIndex].hScore = Vector3.Distance(cellNodes[xIndex, zIndex].position, enemySpawner.playerWorldPos);
 
-                if(cellNodes[xIndex, zIndex].spawnable)
+                if (cellNodes[xIndex, zIndex].spawnable)
                 {
                     GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    go.name = $"index: ({xIndex}, {zIndex})";
                     go.transform.parent = DebugParentGO.transform;
                     go.transform.position = cellNodes[xIndex, zIndex].position;
                     go.transform.localScale = new Vector3(2, 2, 2);
@@ -227,7 +232,7 @@ public class Enemy_AI : MonoBehaviour
             }
         }
 
-        enemyCellNode = cellNodes[(EnemySpawner.sAIGridSize - 1) /2, (EnemySpawner.sAIGridSize - 1) /2];
+        enemyCellNode = cellNodes[(EnemySpawner.sAIGridSize - 1) / 2, (EnemySpawner.sAIGridSize - 1) / 2];
 
         //Debug.Log("Enemy: " + enemyCellNode.position);
         GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -237,7 +242,7 @@ public class Enemy_AI : MonoBehaviour
         go2.GetComponent<Collider>().enabled = false;
         go2.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 1.0f, 0.2f, 1.0f));
 
-        
+
         playerCellNodeNew = GetChildIndexFromPosition(enemySpawner.playerWorldPos);
         //Debug.Log("Player: " + enemySpawner.playerWorldPos);
         GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -277,45 +282,57 @@ public class Enemy_AI : MonoBehaviour
 
     public CellNode GetChildIndexFromPosition(Vector3 position)
     {
-
+        int xIndexOut = -1, zIndexOut = -1;
+        for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++)
+        {
+            if(Mathf.Abs(position.x - cellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            {
+                xIndexOut = xIndex;
+                break;
+            }    
+        }
+        for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++)
+        {
+            if(Mathf.Abs(position.z - cellNodes[0, zIndex].position.z) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
+            {
+                zIndexOut = zIndex;
+                break;
+            }
+        }
+        return cellNodes[xIndexOut, zIndexOut];
+        /*
         CellNode bottomLeft = cellNodes[0, 0];
         float xDiff = Mathf.Abs(position.x - bottomLeft.position.x);
         float zDiff = Mathf.Abs(position.z - bottomLeft.position.z);
         int xIndex = Mathf.RoundToInt(xDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
         int zIndex = Mathf.RoundToInt(zDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
+
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.name = "BottomLeft";
+        go.transform.parent = DebugParentGO.transform;
+        go.transform.position = bottomLeft.position;
+        go.transform.localScale = new Vector3(3.5f, 3.5f, 3.5f);
+        go.GetComponent<Collider>().enabled = false;
+        go.GetComponent<Renderer>().material.SetColor("_Color", new Color(1.0f, 0.2f, 1.0f, 1.0f));
         Debug.Log("(xIndex, zIndex): " + xIndex + ", " + zIndex);
-        Debug.Log("Player Pos: " + position);
+        Debug.Log("BootmLeft Node Pos: " + bottomLeft.position);
+        Debug.Log("Enemy Pos: " + enemyWorldPosNew);
         Debug.Log("Enemy Node Pos: " + enemyCellNode.position);
+        Debug.Log("Player Pos: " + position);
         Debug.Log("Player Node Pos: " + cellNodes[xIndex, zIndex].position);
+
         return cellNodes[xIndex, zIndex];
-        /*
-        int xIndexOut = 0, zIndexOut = 0;
-        float currentLowestDist = 1000f;
-        for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++)
-        {
-            for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++)
-            {
-                float currentDist = SqDistVec3AsVec2(cellNodes[xIndex, zIndex].position, position);
-                if(currentDist < currentLowestDist)
-                {
-                    currentLowestDist = currentDist;
-                    xIndexOut = xIndex;
-                    zIndexOut = zIndex;
-                }
-            }
-        }
-        return cellNodes[xIndexOut, zIndexOut];
         */
     }
 
     Vector2Int FindIndexOfLowestFCost()
     {
         Vector2Int currentLowestCostIndex = new Vector2Int();
-        for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++)
+        for (int xIndex = 0; xIndex < EnemySpawner.sAIGridSize; xIndex++)
         {
-            for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++)
+            for (int zIndex = 0; zIndex < EnemySpawner.sAIGridSize; zIndex++)
             {
-                if(cellNodes[xIndex, zIndex].fScore < cellNodes[currentLowestCostIndex[0], currentLowestCostIndex[1]].fScore)
+                if (cellNodes[xIndex, zIndex].fScore < cellNodes[currentLowestCostIndex[0], currentLowestCostIndex[1]].fScore)
                 {
                     currentLowestCostIndex[0] = xIndex;
                     currentLowestCostIndex[1] = zIndex;
@@ -328,14 +345,14 @@ public class Enemy_AI : MonoBehaviour
     List<Vector2Int> GetNeighbours(Vector2Int node)
     {
         List<Vector2Int> neighbours = new List<Vector2Int>();
-        for(int x=-1; x<2; x++)
+        for (int x = -1; x < 2; x++)
         {
-            for(int z=-1; z< 2; z++)
+            for (int z = -1; z < 2; z++)
             {
                 int xIndex = node[0] + x;
                 int zIndex = node[1] + x;
-            
-                if(
+
+                if (
                     xIndex >= 0 && xIndex < EnemySpawner.sAIGridSize &&
                     zIndex >= 0 && zIndex < EnemySpawner.sAIGridSize
                 )
@@ -352,8 +369,8 @@ public class Enemy_AI : MonoBehaviour
         return Mathf.Abs(Vector2.SqrMagnitude(a) - Vector2.SqrMagnitude(b));
     }
     float SqDistVec3AsVec2(Vector3 a, Vector3 b)
-    {   
-        return Mathf.Abs(((b.x - a.x)*(b.x - a.x)) + ((b.z - a.z)*(b.z - a.z)));
+    {
+        return Mathf.Abs(((b.x - a.x) * (b.x - a.x)) + ((b.z - a.z) * (b.z - a.z)));
     }
 
     //-------------------------------------------------------------------------//
@@ -378,7 +395,7 @@ public class Enemy_AI : MonoBehaviour
         public IEnemyState currentEnemyState { get; private set; }
 
         public EnemyState()
-        {}
+        { }
 
         public void Set(Enemy_AI ai, CharacterController ec)
         {
@@ -430,9 +447,9 @@ public class Enemy_AI : MonoBehaviour
         { }
         public override void CheckForSwitch()
         {
-            if(parent.enemy_AI.IsFallingHard())
+            if (parent.enemy_AI.IsFallingHard())
                 parent.SwitchState(EnemyStateE.falling);
-            if(parent.enemy_AI.IsInChasingDistance())
+            if (parent.enemy_AI.IsInChasingDistance())
                 parent.SwitchState(EnemyStateE.chasing);
         }
     }
@@ -475,7 +492,7 @@ public class Enemy_AI : MonoBehaviour
         {
             if (parent.enemy_AI.IsFallingHard())
                 parent.SwitchState(EnemyStateE.falling);
-            if(parent.enemy_AI.IsInAttackRange())
+            if (parent.enemy_AI.IsInAttackRange())
                 parent.SwitchState(EnemyStateE.attacking);
             if (!isMoving)
                 parent.SwitchState(EnemyStateE.idle);
@@ -565,9 +582,9 @@ public class Enemy_AI : MonoBehaviour
         { }
         public override void CheckForSwitch()
         {
-            if(parent.enemy_AI.IsFallingHard())
+            if (parent.enemy_AI.IsFallingHard())
                 parent.SwitchState(EnemyStateE.falling);
-            if(!parent.enemy_AI.IsInAttackRange())
+            if (!parent.enemy_AI.IsInAttackRange())
                 parent.SwitchState(EnemyStateE.idle);
         }
     }
