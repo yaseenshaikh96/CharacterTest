@@ -153,7 +153,14 @@ public class EnemySpawner : MonoBehaviour
 
     public ParentCellNode GetParentIndexFromPosition(Vector3 position)
     {
-        
+        ParentCellNode bottomLeft = parentCellNodes[0, 0];
+        float xDiff = Mathf.Abs(position.x - bottomLeft.position.x);
+        float zDiff = Mathf.Abs(position.z - bottomLeft.position.z);
+        int xIndex = Mathf.RoundToInt(xDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
+        int zIndex = Mathf.RoundToInt(zDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
+
+        return parentCellNodes[xIndex, zIndex];
+        /*
         int xIndex, zIndex;
         for(xIndex=0; xIndex<sPointsPerChunk * AIChunkCount; xIndex++ )
         {
@@ -170,6 +177,7 @@ public class EnemySpawner : MonoBehaviour
             }
         }
         return parentCellNodes[xIndex, zIndex];
+        */
         /*
         int[] indexs = new int[2];
         indexs[0] = Mathf.RoundToInt(position.x / (chunkSize / pointsPerChunk));

@@ -241,9 +241,10 @@ public class Enemy_AI : MonoBehaviour
         playerCellNodeNew = GetChildIndexFromPosition(enemySpawner.playerWorldPos);
         //Debug.Log("Player: " + enemySpawner.playerWorldPos);
         GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go3.name = "PlayerNode";
         go3.transform.parent = DebugParentGO.transform;
         go3.transform.position = playerCellNodeNew.position;
-        go3.transform.localScale = new Vector3(3, 3, 3);
+        go3.transform.localScale = new Vector3(3.5f, 3.5f, 3.5f);
         go3.GetComponent<Collider>().enabled = false;
         go3.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 1.0f, 1.0f));
     }
@@ -276,34 +277,17 @@ public class Enemy_AI : MonoBehaviour
 
     public CellNode GetChildIndexFromPosition(Vector3 position)
     {
-        int xIndexOut = -1, zIndexOut = -1;
-        for(int xIndex=0; xIndex<EnemySpawner.sAIGridSize; xIndex++)
-        {
-            if(Mathf.Abs(position.x - cellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
-            {
-                xIndexOut = xIndex;
-                break;
-            }    
-        }
-        for(int zIndex=0; zIndex<EnemySpawner.sAIGridSize; zIndex++)
-        {
-            if(Mathf.Abs(position.z - cellNodes[0, zIndex].position.z) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
-            {
-                zIndexOut = zIndex;
-                break;
-            }
-        }
-        if(xIndexOut == -1)
-        {
-            Debug.Log("ERROR: IndexOutOfBound: (x,z): " + xIndexOut + ", " + zIndexOut);
-            xIndexOut++;
-        }
-        if( zIndexOut == -1)
-        {
-            Debug.Log("ERROR: IndexOutOfBound: (x,z): " + xIndexOut + ", " + zIndexOut);
-            zIndexOut++;
-        }
-        return cellNodes[xIndexOut, zIndexOut];
+
+        CellNode bottomLeft = cellNodes[0, 0];
+        float xDiff = Mathf.Abs(position.x - bottomLeft.position.x);
+        float zDiff = Mathf.Abs(position.z - bottomLeft.position.z);
+        int xIndex = Mathf.RoundToInt(xDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
+        int zIndex = Mathf.RoundToInt(zDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
+        Debug.Log("(xIndex, zIndex): " + xIndex + ", " + zIndex);
+        Debug.Log("Player Pos: " + position);
+        Debug.Log("Enemy Node Pos: " + enemyCellNode.position);
+        Debug.Log("Player Node Pos: " + cellNodes[xIndex, zIndex].position);
+        return cellNodes[xIndex, zIndex];
         /*
         int xIndexOut = 0, zIndexOut = 0;
         float currentLowestDist = 1000f;
