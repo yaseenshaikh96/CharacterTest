@@ -22,6 +22,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] public float attackDistance;
 
     public static int sAIGridSize = 21;
+    public static float sDiagonalDistBetwnPoint, sStraightDistBetwnPoint;
 
 
     public Vector2 playerWorldPos2D {get; private set;}
@@ -60,6 +61,9 @@ public class EnemySpawner : MonoBehaviour
             }
         }
         Enemy_AI.enemySpawner = this;
+
+        sStraightDistBetwnPoint = sChunkSize / (float)sPointsPerChunk;
+        sDiagonalDistBetwnPoint = Vector2.Distance(new Vector2(0, 0), new Vector2(sStraightDistBetwnPoint, sStraightDistBetwnPoint));
 
         // spawn enemies
         //Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
@@ -157,7 +161,7 @@ public class EnemySpawner : MonoBehaviour
 
     public ParentCellNode GetParentIndexFromPosition(Vector3 position)
     {
-                int xIndexOut = -1, zIndexOut = -1;
+        int xIndexOut = -1, zIndexOut = -1;
         for(int xIndex=0; xIndex<parentCellNodesSize; xIndex++)
         {
             if(Mathf.Abs(position.x - parentCellNodes[xIndex, 0].position.x) < ((EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk) * 0.8f))
@@ -175,15 +179,6 @@ public class EnemySpawner : MonoBehaviour
             }
         }
         return parentCellNodes[xIndexOut, zIndexOut];
-        /*
-        ParentCellNode bottomLeft = parentCellNodes[0, 0];
-        float xDiff = Mathf.Abs(position.x - bottomLeft.position.x);
-        float zDiff = Mathf.Abs(position.z - bottomLeft.position.z);
-        int xIndex = Mathf.RoundToInt(xDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
-        int zIndex = Mathf.RoundToInt(zDiff / (EnemySpawner.sChunkSize / (float)EnemySpawner.sPointsPerChunk));
-
-        return parentCellNodes[xIndex, zIndex];
-        */
     }
 
 }
