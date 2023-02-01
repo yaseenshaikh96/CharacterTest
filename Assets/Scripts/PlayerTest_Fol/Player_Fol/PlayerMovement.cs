@@ -138,8 +138,7 @@ public class PlayerMovement : MonoBehaviour
     {
         gravity.Increment(1);
         gravity.Update();
-        return;
-        //characterController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
+        characterController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
     }
     void ResetGravity()
     {

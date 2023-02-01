@@ -16,18 +16,21 @@ public class CellNode
 
 public class Enemy_AI : MonoBehaviour
 {
-    GameObject DebugParentGO;
-    List<CellNode> openCellNodesList, closedCellNodesList;
 
+    static bool DebugShouldShowAIGrid = false;
+    static bool DebugShouldShowAIPath = true;
+    GameObject DebugParentGO;
     public static EnemySpawner enemySpawner;
     CharacterController enemyController;
     GameObject EnemyGO;
     EnemyState enemyState;
 
     //------------------------------------------------------------------//
+    public bool isOutOfRange = false;
     List<CellNode> enemyPath;
+    int currentPathIndex = 0;
     CellNode enemyCellNode, playerCellNodeOld, playerCellNodeNew;
-    ParentCellNode enemyParentCellNodeNew, enemyParentCellNodeOld;
+    ParentCellNode enemyParentCellNodeNew, enemyParentCellNodeOld, playerParentCellNodeNew, playerParentCellNodeOld;
     Vector3 enemyWorldPosNew, enemyWorldPosOld;
     Vector2 enemyWorldPos2D;
     Vector3 previousDirOfMotion;
@@ -46,9 +49,7 @@ public class Enemy_AI : MonoBehaviour
 
         enemyState = new EnemyState();
         enemyState.Set(this, enemyController);
-
-        openCellNodesList = new List<CellNode>();
-        closedCellNodesList = new List<CellNode>();
+        
         enemyPath = new List<CellNode>();
 
         cellNodes = new CellNode[EnemySpawner.sAIGridSize, EnemySpawner.sAIGridSize];
@@ -70,28 +71,50 @@ public class Enemy_AI : MonoBehaviour
         if (timeSinceLastLoaded > timeBtnLoad)
         {
             timeSinceLastLoaded = 0;
-            if (IsOutOfRange())
+         
+            if (IsPlayerOutOfRange() || enemySpawner.IsEnemyOutOfRange(enemyWorldPosNew))
             {
-                Debug.Log("Player OutOFRange");
+                Debug.Log("Enemy Or Player OutOFRange");
+                isOutOfRange = true;
                 return;
             }
-            UpdatePositionNodes();
+            isOutOfRange = false;
+            if(ShouldPathUpdated())
+            {
+                GetPositionNodesFromParent();
+                UpdateAStarValues();
+            }
         }
-
 
         if (enemySpawner == null)
             return;
 
         UpdateVariables();
-        if (IsOutOfRange())
-        {
-            return;
-        }
+ 
         enemyState.Update();
+    }
+
+    bool ShouldPathUpdated()
+    {
+        enemyParentCellNodeNew = enemySpawner.GetParentIndexFromPosition(enemyWorldPosNew);
+        playerParentCellNodeNew = enemySpawner.GetParentIndexFromPosition(enemySpawner.playerWorldPos);
+
+        if(
+            playerParentCellNodeNew == playerParentCellNodeOld &&
+            enemyParentCellNodeNew == enemyParentCellNodeOld
+        )
+        {
+            Debug.Log("Path NOT updated!");
+            return false;
+        }
+        Debug.Log("Path updated!");
+        playerParentCellNodeOld = playerParentCellNodeNew;
+        enemyParentCellNodeOld = enemyParentCellNodeNew;
+        return true;
+
     }
     void UpdateVariables()
     {
-        enemyParentCellNodeOld = enemyParentCellNodeNew;
         playerCellNodeOld = playerCellNodeNew;
 
         enemyWorldPosOld = enemyWorldPosNew;
@@ -100,9 +123,12 @@ public class Enemy_AI : MonoBehaviour
         enemyWorldPos2D.x = enemyWorldPosNew.x;
         enemyWorldPos2D.y = enemyWorldPosNew.z;
     }
+
     //-----------------------------------------------------------------//
 
-    bool IsOutOfRange()
+
+
+    bool IsPlayerOutOfRange()
     {
         float DistBetwnPoints = (EnemySpawner.sChunkSize / EnemySpawner.sPointsPerChunk);
         float distToEdge = (DistBetwnPoints * ((EnemySpawner.sAIGridSize - 1) / 2));
@@ -110,8 +136,8 @@ public class Enemy_AI : MonoBehaviour
             enemySpawner.playerWorldPos.x > enemyWorldPosNew.x + distToEdge ||
             enemySpawner.playerWorldPos.x < enemyWorldPosNew.x - distToEdge ||
 
-            enemySpawner.playerWorldPos.y > enemyWorldPosNew.y + distToEdge ||
-            enemySpawner.playerWorldPos.y < enemyWorldPosNew.y - distToEdge
+            enemySpawner.playerWorldPos.z > enemyWorldPosNew.z + distToEdge ||
+            enemySpawner.playerWorldPos.z < enemyWorldPosNew.z - distToEdge
         )
         {
             return true;
@@ -122,11 +148,29 @@ public class Enemy_AI : MonoBehaviour
         }
     }
 
+    static float ThresholdDistance = 0.2f;
     void AIMove(float magnitude)
     {
-        Vector3 moveDirection = enemySpawner.playerWorldPos - enemyWorldPosNew;
+        if(enemyPath.Count < 1)
+        {
+            //Debug.Log("Path not created yet!");
+            return;
+        }
+
+        if(Vec3AsVec2Dist(enemyWorldPosNew, enemyPath[currentPathIndex].position) < ThresholdDistance)
+        {
+            currentPathIndex++;
+        }
+        if(currentPathIndex == enemyPath.Count-1)
+        {
+            //Debug.Log("Reached Player");
+            return;
+        }
+
+        Vector3 moveDirection = enemyPath[currentPathIndex].position - enemyWorldPosNew;
         moveDirection.y = 0;
         moveDirection = moveDirection.normalized;
+
         Move(moveDirection, magnitude);
     }
 
@@ -164,8 +208,7 @@ public class Enemy_AI : MonoBehaviour
     {
         gravity.Increment(1);
         gravity.Update();
-        return;
-        //enemyController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
+        enemyController.Move(new Vector3(0, -gravity.currentValue, 0) * Time.deltaTime);
     }
     void ResetGravity()
     {
@@ -186,28 +229,15 @@ public class Enemy_AI : MonoBehaviour
     }
     bool IsInChasingDistance()
     {
-        return true;
+        return !isOutOfRange;
         //return Vector3.Distance(enemySpawner.playerWorldPos, enemyWorldPosNew) < enemySpawner.chasingDistance;
     }
 
     //-------------------------------------------------------------------------//
 
-    void UpdatePositionNodes()
+    void GetPositionNodesFromParent()
     {
-        Destroy(DebugParentGO);
-        DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        DebugParentGO.name = "Enemy_AI_DebugParentGO";
-        DebugParentGO.transform.position = Vector3.zero;
-
-        enemyParentCellNodeNew = enemySpawner.GetParentIndexFromPosition(enemyWorldPosNew);
-
-        /*
-        if(parentGridIndicesNew[0] == -1 
-            || parentGridIndicesNew[1] == -1 )
-        {
-            Debug.Log("ERROR!!!!!!!" + " : " + parentGridIndicesNew[0] + ", " + parentGridIndicesNew[1]);
-        }
-        */
+        DebugDestroyParentGO();
 
         for (int xIndex = 0; xIndex < EnemySpawner.sAIGridSize; xIndex++)
         {
@@ -221,55 +251,29 @@ public class Enemy_AI : MonoBehaviour
                 cellNodes[xIndex, zIndex].xIndex = xIndex;
                 cellNodes[xIndex, zIndex].zIndex = zIndex;
                 //cellNodes[xIndex, zIndex].hScore = Vector3.Distance(cellNodes[xIndex, zIndex].position, enemySpawner.playerWorldPos);
-
-                if (cellNodes[xIndex, zIndex].spawnable)
-                {
-                    GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    go.name = $"index: ({xIndex}, {zIndex})";
-                    go.transform.parent = DebugParentGO.transform;
-                    go.transform.position = cellNodes[xIndex, zIndex].position;
-                    go.transform.localScale = new Vector3(2, 2, 2);
-                    go.GetComponent<Collider>().enabled = false;
-                    go.GetComponent<Renderer>().material.SetColor("_Color", new Color(1.0f, 0.2f, 0.2f, 1.0f));
-                }
             }
         }
-
         enemyCellNode = cellNodes[(EnemySpawner.sAIGridSize - 1) / 2, (EnemySpawner.sAIGridSize - 1) / 2];
-
-        GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go2.transform.parent = DebugParentGO.transform;
-        go2.transform.position = enemyCellNode.position;
-        go2.transform.localScale = new Vector3(3, 3, 3);
-        go2.GetComponent<Collider>().enabled = false;
-        go2.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 1.0f, 0.2f, 1.0f));
-
-
         playerCellNodeNew = GetChildNodeFromPosition(enemySpawner.playerWorldPos);
-        GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go3.name = "PlayerNode";
-        go3.transform.parent = DebugParentGO.transform;
-        go3.transform.position = playerCellNodeNew.position;
-        go3.transform.localScale = new Vector3(3.5f, 3.5f, 3.5f);
-        go3.GetComponent<Collider>().enabled = false;
-        go3.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 1.0f, 1.0f));
-        
-        Debug.Log("start");
-        UpdateAStarValues();
+
+        if(DebugShouldShowAIGrid)
+        {
+            DebugShowAIGrid();
+        }
+        return;
     }
 
 
     void UpdateAStarValues()
     {
-
-        openCellNodesList.Clear();
-        closedCellNodesList.Clear();
+        List<CellNode> openCellNodesList = new List<CellNode>();
+        List<CellNode> closedCellNodesList = new List<CellNode>();
 
         openCellNodesList.Add(enemyCellNode);
 
         while(openCellNodesList.Count > 0)
         {
-            CellNode currentNode = FindNodeWithLowestFCost();
+            CellNode currentNode = FindNodeWithLowestFCost(openCellNodesList);
 
             openCellNodesList.Remove(currentNode);
             closedCellNodesList.Add(currentNode);
@@ -319,16 +323,11 @@ public class Enemy_AI : MonoBehaviour
         }
         path.Reverse();
         enemyPath = path;
-        int i=0;
-        foreach(CellNode node in path)
+        currentPathIndex = 0;
+
+        if(DebugShouldShowAIPath)
         {
-            GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = $"path noe: {i}";
-            go.transform.parent = DebugParentGO.transform;
-            go.transform.position = node.position;
-            go.transform.localScale = new Vector3(4f, 4f, 4f);
-            go.GetComponent<Collider>().enabled = false;
-            go.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 0.2f, 1.0f));
+            DebugShowAIPath();
         }
     }
     float GetDistanceBetweenNode(CellNode a, CellNode b)
@@ -367,7 +366,7 @@ public class Enemy_AI : MonoBehaviour
         return cellNodes[xIndexOut, zIndexOut];
     }
 
-    CellNode FindNodeWithLowestFCost()
+    CellNode FindNodeWithLowestFCost(List<CellNode> openCellNodesList)
     {
         if(openCellNodesList.Count == 1)
         {
@@ -411,15 +410,69 @@ public class Enemy_AI : MonoBehaviour
         }
         return neighbours;
     }
+    
+    float Vec3AsVec2Dist(Vector3 a, Vector3 b)
+    {
+        return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
+    }
+    //-------------------------------------------------------------------------//
+    //-------------------------------------------------------------------------//
+    void DebugDestroyParentGO()
+    {
+        Destroy(DebugParentGO);
+        DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        DebugParentGO.name = "Enemy_AI_DebugParentGO";
+        DebugParentGO.transform.position = Vector3.zero;
+    }
+    void DebugShowAIPath()
+    {
+        int i=0;
+        foreach(CellNode node in enemyPath)
+        {
+            GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = $"path noe: {i}";
+            go.transform.parent = DebugParentGO.transform;
+            go.transform.position = node.position;
+            go.transform.localScale = new Vector3(2.0f, 2.0f, 2.0f);
+            go.GetComponent<Collider>().enabled = false;
+            go.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 0.2f, 1.0f));
+        }
+    }
+    void DebugShowAIGrid()
+    {
+        GameObject go2 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go2.transform.parent = DebugParentGO.transform;
+        go2.transform.position = enemyCellNode.position;
+        go2.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
+        go2.GetComponent<Collider>().enabled = false;
+        go2.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 1.0f, 0.2f, 1.0f));
 
-    float SqDist(Vector2 a, Vector2 b)
-    {
-        return Mathf.Abs(Vector2.SqrMagnitude(a) - Vector2.SqrMagnitude(b));
+        GameObject go3 = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go3.name = "PlayerNode";
+        go3.transform.parent = DebugParentGO.transform;
+        go3.transform.position = playerCellNodeNew.position;
+        go3.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
+        go3.GetComponent<Collider>().enabled = false;
+        go3.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.2f, 0.2f, 1.0f, 1.0f));
+
+        for (int xIndex = 0; xIndex < EnemySpawner.sAIGridSize; xIndex++)
+        {
+            for (int zIndex = 0; zIndex < EnemySpawner.sAIGridSize; zIndex++)
+            {
+                if (cellNodes[xIndex, zIndex].spawnable)
+                {
+                    GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    go.name = $"index: ({xIndex}, {zIndex})";
+                    go.transform.parent = DebugParentGO.transform;
+                    go.transform.position = cellNodes[xIndex, zIndex].position;
+                    go.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+                    go.GetComponent<Collider>().enabled = false;
+                    go.GetComponent<Renderer>().material.SetColor("_Color", new Color(1.0f, 0.2f, 0.2f, 1.0f));
+                }
+            }
+        }
     }
-    float SqDistVec3AsVec2(Vector3 a, Vector3 b)
-    {
-        return Mathf.Abs(((b.x - a.x) * (b.x - a.x)) + ((b.z - a.z) * (b.z - a.z)));
-    }
+
 
     //-------------------------------------------------------------------------//
     private enum EnemyStateE
@@ -462,9 +515,10 @@ public class Enemy_AI : MonoBehaviour
         }
         public void Update()
         {
+
             currentEnemyState.Action();
             currentEnemyState.CheckForSwitch();
-
+        
             //Debug.Log("State: " + currentEnemyState);
 
             if (enemy_AI.IsFallingSoft())

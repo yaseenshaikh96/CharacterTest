@@ -11,6 +11,7 @@ public class ParentCellNode
 
 public class EnemySpawner : MonoBehaviour
 {
+    static bool DebugShouldShowParentgrid = false;
     GameObject DebugParentGO;
     [SerializeField] Vector3 testPosition;
     [SerializeField] bool update = false;
@@ -28,6 +29,7 @@ public class EnemySpawner : MonoBehaviour
     public Vector2 playerWorldPos2D {get; private set;}
     public Vector3 playerWorldPos {get; private set;}
 
+    Vector3 playerChunkIndexNew, playerChunkIndexOld; 
 
 
     Dictionary<Vector3, Chunk> loadedChunks;
@@ -40,6 +42,9 @@ public class EnemySpawner : MonoBehaviour
     void Start()
     {
         DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+        playerChunkIndexNew = new Vector3(-1f, -1f, -1f);
+        playerChunkIndexOld = playerChunkIndexNew;
 
         chunkManager = GameObject.Find("TerrainManagerGO").GetComponent<ChunkManager>();
         sPointsPerChunk = chunkManager.pointsPerChunk;
@@ -66,7 +71,8 @@ public class EnemySpawner : MonoBehaviour
         sDiagonalDistBetwnPoint = Vector2.Distance(new Vector2(0, 0), new Vector2(sStraightDistBetwnPoint, sStraightDistBetwnPoint));
 
         // spawn enemies
-        //Instantiate(EnemyPrefab, new Vector3(0, 0, -50), Quaternion.identity);
+        Instantiate(EnemyPrefab, new Vector3(50, 300, -50), Quaternion.identity);
+        Instantiate(EnemyPrefab, new Vector3(0, 300, -50), Quaternion.identity);
     }
 
 /*
@@ -76,14 +82,13 @@ public class EnemySpawner : MonoBehaviour
             timeSinceLastLoaded = 0;
 */
     float timeSinceLoad = 0;
-    bool hasBeenUpdated = false;
     const float timeBetweenLoad = 4f; 
     void Update()
     {
         timeSinceLoad += Time.deltaTime;
-        if (!hasBeenUpdated && timeSinceLoad > timeBetweenLoad)
+        if (timeSinceLoad > timeBetweenLoad)
         {
-            hasBeenUpdated = true;
+            timeSinceLoad = 0;
             UpdatePositionNodes();
         }
         // update player pos
@@ -99,20 +104,27 @@ public class EnemySpawner : MonoBehaviour
 
     void UpdatePositionNodes()
     {
-        Destroy(DebugParentGO);
-        DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        DebugParentGO.name = "EnemySpawnerGO_DebugParent"; 
+
+
+        playerChunkIndexNew = GetChunkIndexFromPosition(playerWorldPos);
+        if(playerChunkIndexNew == playerChunkIndexOld && playerChunkIndexNew.y != -1)
+        {
+            Debug.Log("Parent Grid NOT Updated!");
+            return;
+        }
+        playerChunkIndexOld = playerChunkIndexNew;
+        Debug.Log("Parent Grid Updated!");
+
 
         loadedChunks = GameObject.Find("TerrainManagerGO").GetComponent<TerrainDynamicLoad>().loadedChunks;
 
-        Vector3 playerChunkIndex = GetChunkIndexFromPosition(playerWorldPos);
         
         for(int xIndex = 0; xIndex < AIChunkCount; xIndex++)
         {
             for(int zIndex = 0; zIndex < AIChunkCount; zIndex ++)
             {
-                int chunkIndexX = (int)playerChunkIndex.x - (int)((AIChunkCount-1)/2) + xIndex;
-                int chunkIndexZ = (int)playerChunkIndex.z - (int)((AIChunkCount-1)/2) + zIndex;
+                int chunkIndexX = (int)playerChunkIndexNew.x - (int)((AIChunkCount-1)/2) + xIndex;
+                int chunkIndexZ = (int)playerChunkIndexNew.z - (int)((AIChunkCount-1)/2) + zIndex;
                 
                 Vector3 currentChunkPos = new Vector3(chunkIndexX, 0, chunkIndexZ);
                 Chunk currentChunk;
@@ -134,18 +146,26 @@ public class EnemySpawner : MonoBehaviour
                 }
             }
         }
-        for(int xIndex = 0; xIndex < parentCellNodesSize; xIndex++)
-        {
-            for(int zIndex = 0; zIndex < parentCellNodesSize; zIndex ++)
-            {
-                if(parentCellNodes[xIndex, zIndex].spawnable)
-                {
-                    GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    go.name = $"index: ({xIndex}, {zIndex})";
-                    go.transform.parent = DebugParentGO.transform;
-                    go.transform.position = parentCellNodes[xIndex, zIndex].position;
-                    go.GetComponent<Collider>().enabled = false;
 
+        
+        if(DebugShouldShowParentgrid)
+        {
+            Destroy(DebugParentGO);
+            DebugParentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            DebugParentGO.name = "EnemySpawnerGO_DebugParent"; 
+            for(int xIndex = 0; xIndex < parentCellNodesSize; xIndex++)
+            {
+                for(int zIndex = 0; zIndex < parentCellNodesSize; zIndex ++)
+                {
+                    if(parentCellNodes[xIndex, zIndex].spawnable)
+                    {
+                        GameObject go = UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        go.name = $"index: ({xIndex}, {zIndex})";
+                        go.transform.parent = DebugParentGO.transform;
+                        go.transform.position = parentCellNodes[xIndex, zIndex].position;
+                        go.GetComponent<Collider>().enabled = false;
+
+                    }
                 }
             }
         }
@@ -181,4 +201,18 @@ public class EnemySpawner : MonoBehaviour
         return parentCellNodes[xIndexOut, zIndexOut];
     }
 
+    public bool IsEnemyOutOfRange(Vector3 position)
+    {
+        ParentCellNode bottomLeft = parentCellNodes[(sAIGridSize-1)/2,(sAIGridSize-1)/2];
+        ParentCellNode topRight = parentCellNodes[parentCellNodesSize-1-(sAIGridSize-1)/2, parentCellNodesSize-1-(sAIGridSize-1)/2];
+
+        if(
+            position.x > bottomLeft.position.x && position.x < topRight.position.x &&
+            position.z > bottomLeft.position.z && position.z < topRight.position.z
+            )
+        {
+            return false;
+        }
+        return true;
+    }
 }
